@@ -80,16 +80,20 @@ KP_CONFIDENCE_THRESHOLD: float = 0.30
 # ─────────────────────────────────────────────────────────────────────────────
 # Strike detection thresholds  (heuristic rules, tunable)
 # ─────────────────────────────────────────────────────────────────────────────
-# Arm extension ratio: (wrist-to-shoulder dist) / (forearm length)
-# A value ≥ this threshold is interpreted as "punching extension"
-PUNCH_EXTENSION_THRESHOLD: float = 0.75
+# Minimum smoothed wrist velocity (pixels/frame) to trigger a strike
+STRIKE_MIN_VELOCITY: float = 25.0
 
-# Minimum wrist velocity (pixels/frame) to trigger punch detection
-PUNCH_VELOCITY_THRESHOLD: float = 8.0
+# Maximum smoothed wrist velocity. Anything higher is a tracker teleport artifact.
+STRIKE_MAX_VELOCITY: float = 120.0
 
-# Minimum number of consecutive frames a punch extension must be held
-# before being counted (suppresses noise)
-PUNCH_MIN_FRAMES: int = 2
+# Minimum arm extension ratio (wrist-to-shoulder / forearm) to count as punch
+STRIKE_MIN_EXTENSION: float = 0.65
+
+# Cooldown frames before the same arm can trigger another strike
+STRIKE_COOLDOWN_FRAMES: int = 20
+
+# Enable verbose console debugging for why strikes were triggered
+DEBUG_STRIKES: bool = False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Defense detection thresholds
@@ -160,9 +164,11 @@ class _Config:
     MAX_FIGHTERS = MAX_FIGHTERS
     KP = KP
     KP_CONFIDENCE_THRESHOLD = KP_CONFIDENCE_THRESHOLD
-    PUNCH_EXTENSION_THRESHOLD = PUNCH_EXTENSION_THRESHOLD
-    PUNCH_VELOCITY_THRESHOLD = PUNCH_VELOCITY_THRESHOLD
-    PUNCH_MIN_FRAMES = PUNCH_MIN_FRAMES
+    STRIKE_MIN_VELOCITY = STRIKE_MIN_VELOCITY
+    STRIKE_MAX_VELOCITY = STRIKE_MAX_VELOCITY
+    STRIKE_MIN_EXTENSION = STRIKE_MIN_EXTENSION
+    STRIKE_COOLDOWN_FRAMES = STRIKE_COOLDOWN_FRAMES
+    DEBUG_STRIKES = DEBUG_STRIKES
     GUARD_WRIST_HEAD_RATIO = GUARD_WRIST_HEAD_RATIO
     DUCK_HIP_DROP_RATIO = DUCK_HIP_DROP_RATIO
     SLIP_LATERAL_RATIO = SLIP_LATERAL_RATIO

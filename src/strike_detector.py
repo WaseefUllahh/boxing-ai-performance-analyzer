@@ -1,202 +1,230 @@
 """
-src/strike_detector.py — Rule-based punch classifier.
+src/strike_detector.py — Rule-based strike classifier.
 
 Responsibilities
 ----------------
-- Classify punches as: JAB, CROSS, HOOK, UPPERCUT, or NONE.
-- Use PoseFeatures + a small velocity history buffer per fighter.
-- No neural network, no training data needed.
-
-Classification logic (heuristic)
----------------------------------
-A "punch event" is triggered when:
-  1. Arm extension ratio exceeds PUNCH_EXTENSION_THRESHOLD.
-  2. Wrist velocity exceeds PUNCH_VELOCITY_THRESHOLD (pixels / frame).
-  3. Extension is sustained for at least PUNCH_MIN_FRAMES frames.
-
-Punch type is then determined by:
-  - Which arm is extended (left vs right).
-  - Horizontal vs vertical wrist trajectory.
-  - Height of the wrist relative to the shoulder (uppercut heuristic).
-
-Output
-------
-A StrikeResult dataclass per fighter per frame.
+- Consume PoseFeatures and SmoothedFeatures.
+- Detect strikes using configurable geometric heuristics.
+- Apply cooldown debouncing to ensure 1 punch = 1 event.
+- Differentiate Jab, Cross, Hook, Uppercut based on trajectory and posture.
 """
 
 from __future__ import annotations
 
-from collections import deque
+import math
 from dataclasses import dataclass
-
-import numpy as np
+from typing import Optional, List
 
 from config import CFG
-from src.pose_features import PoseFeatures
-
+from src.pose_features import PoseFeatures, distance, magnitude
+from src.temporal_features import SmoothedFeatures
 
 # ---------------------------------------------------------------------------
-# Data structures
+# Output Structures
 # ---------------------------------------------------------------------------
-
-STRIKE_LABELS = ("NONE", "JAB", "CROSS", "HOOK", "UPPERCUT")
-
 
 @dataclass
-class StrikeResult:
-    track_id: int
-    label: str = "NONE"          # one of STRIKE_LABELS
-    arm: str = ""                 # "left" | "right" | ""
-    confidence: float = 0.0      # heuristic score 0-1
-
+class StrikeEvent:
+    """A single discrete punch event."""
+    fighter_id: int
+    frame_number: int
+    timestamp: float
+    action: str              # "JAB", "CROSS", "HOOK", "UPPERCUT", "PUNCH"
+    hand: str                # "left", "right"
+    confidence: float        # heuristic score 0.0-1.0
+    wrist_position: Optional[tuple[float, float]]
+    opponent_distance: Optional[float]
+    target_zone_estimate: str # "HEAD", "BODY", "UNKNOWN"
+    event_type: str = "STRIKE"
 
 # ---------------------------------------------------------------------------
-# Per-fighter state
+# State Tracking
 # ---------------------------------------------------------------------------
 
 class _FighterStrikeState:
-    """Tracks velocity history and extension state for one fighter."""
-
-    def __init__(self) -> None:
-        self.left_wrist_history:  deque[tuple[float, float]] = deque(maxlen=CFG.SMOOTHING_WINDOW)
-        self.right_wrist_history: deque[tuple[float, float]] = deque(maxlen=CFG.SMOOTHING_WINDOW)
-        self.left_ext_frames:  int = 0   # consecutive extended frames (left arm)
-        self.right_ext_frames: int = 0
-
+    """Maintains debounce cooldowns for each arm."""
+    def __init__(self):
+        self.left_cooldown: int = 0
+        self.right_cooldown: int = 0
+        
+    def tick(self):
+        if self.left_cooldown > 0:
+            self.left_cooldown -= 1
+        if self.right_cooldown > 0:
+            self.right_cooldown -= 1
 
 # ---------------------------------------------------------------------------
-# Classifier
+# Engine
 # ---------------------------------------------------------------------------
 
 class StrikeDetector:
-    """
-    Frame-by-frame, stateful punch classifier.
-
-    Call ``detect(features)`` every frame for each fighter.
-    """
-
-    def __init__(
-        self,
-        extension_threshold: float = CFG.PUNCH_EXTENSION_THRESHOLD,
-        velocity_threshold:  float = CFG.PUNCH_VELOCITY_THRESHOLD,
-        min_frames:          int   = CFG.PUNCH_MIN_FRAMES,
-    ) -> None:
-        self.ext_thresh = extension_threshold
-        self.vel_thresh = velocity_threshold
-        self.min_frames = min_frames
+    
+    def __init__(self):
         self._states: dict[int, _FighterStrikeState] = {}
+        self.min_velocity = CFG.STRIKE_MIN_VELOCITY
+        self.max_velocity = getattr(CFG, 'STRIKE_MAX_VELOCITY', 120.0)
+        self.min_extension = CFG.STRIKE_MIN_EXTENSION
+        self.cooldown_frames = CFG.STRIKE_COOLDOWN_FRAMES
+        self.debug = CFG.DEBUG_STRIKES
 
-    # ------------------------------------------------------------------
-    def detect(self, features: PoseFeatures) -> StrikeResult:
-        """
-        Classify the current frame's pose into a punch label.
-
-        Parameters
-        ----------
-        features : PoseFeatures
-            Output of PoseFeatureExtractor.extract() for this fighter.
-
-        Returns
-        -------
-        StrikeResult
-        """
+    def detect(
+        self, 
+        features: PoseFeatures, 
+        smoothed: SmoothedFeatures, 
+        opponent_smoothed: Optional[SmoothedFeatures],
+        frame_idx: int,
+        fps: float
+    ) -> List[StrikeEvent]:
+        
         tid = features.track_id
         if tid not in self._states:
             self._states[tid] = _FighterStrikeState()
-
+            
         state = self._states[tid]
-
-        if not features.valid:
-            return StrikeResult(track_id=tid)
-
-        # ── Update wrist history ──────────────────────────────────────────
-        state.left_wrist_history.append(features.left_wrist_xy)
-        state.right_wrist_history.append(features.right_wrist_xy)
-
-        # ── Compute velocities ────────────────────────────────────────────
-        l_vel = self._velocity(state.left_wrist_history)
-        r_vel = self._velocity(state.right_wrist_history)
-
-        # ── Check extension + velocity thresholds ────────────────────────
-        l_extended = (features.left_arm_extension  >= self.ext_thresh and l_vel >= self.vel_thresh)
-        r_extended = (features.right_arm_extension >= self.ext_thresh and r_vel >= self.vel_thresh)
-
-        # Count consecutive extension frames
-        state.left_ext_frames  = (state.left_ext_frames  + 1) if l_extended  else 0
-        state.right_ext_frames = (state.right_ext_frames + 1) if r_extended  else 0
-
-        # ── Trigger punch event ───────────────────────────────────────────
-        if state.left_ext_frames >= self.min_frames:
-            label, hconf = self._classify(
-                "left", features, state.left_wrist_history, l_vel
-            )
-            return StrikeResult(track_id=tid, label=label, arm="left", confidence=hconf)
-
-        if state.right_ext_frames >= self.min_frames:
-            label, hconf = self._classify(
-                "right", features, state.right_wrist_history, r_vel
-            )
-            return StrikeResult(track_id=tid, label=label, arm="right", confidence=hconf)
-
-        return StrikeResult(track_id=tid)
-
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _velocity(history: deque[tuple[float, float] | None]) -> float:
-        """Mean pixel velocity over the last two valid positions."""
-        valid = [p for p in history if p is not None]
-        if len(valid) < 2:
-            return 0.0
-        p1, p2 = valid[-2], valid[-1]
+        state.tick()
         
-        # We can import pose_features if we want, but np.hypot is fine
-        from src.pose_features import distance
-        dist = distance(p1, p2)
-        return dist if dist is not None else 0.0
+        events: List[StrikeEvent] = []
+        
+        if not features.valid:
+            return events
+            
+        timestamp = frame_idx / max(fps, 1.0)
+        
+        # Determine Lead/Rear hand using distance to opponent (if available)
+        # In 2D, the hand physically closer to the opponent's body center is typically the lead hand (jab).
+        left_is_lead = True 
+        if opponent_smoothed and opponent_smoothed.body_center and smoothed.left_wrist and smoothed.right_wrist:
+            dist_l = distance(smoothed.left_wrist, opponent_smoothed.body_center)
+            dist_r = distance(smoothed.right_wrist, opponent_smoothed.body_center)
+            if dist_l is not None and dist_r is not None:
+                left_is_lead = dist_l < dist_r
 
-    @staticmethod
-    def _classify(
-        arm: str,
-        features: PoseFeatures,
-        history: deque[tuple[float, float] | None],
-        velocity: float,
-    ) -> tuple[str, float]:
-        """
-        Heuristic punch-type classifier.
-
-        Returns (label, confidence_score).
-        """
-        valid = [p for p in history if p is not None]
-        if len(valid) < 2:
-            return ("JAB" if arm == "left" else "CROSS", 0.5)
-
-        p_prev, p_curr = valid[-2], valid[-1]
-        dx = p_curr[0] - p_prev[0]
-        dy = p_curr[1] - p_prev[1]
-
-        # Wrist height relative to shoulder
-        if arm == "left":
-            wrist_y = features.left_wrist[1] if features.left_wrist else 0.0
+        # Check Left Arm
+        if state.left_cooldown == 0:
+            vel = magnitude(smoothed.left_wrist_velocity) or 0.0
             ext = features.left_arm_extension
-        else:
-            wrist_y = features.right_wrist[1] if features.right_wrist else 0.0
+            if self.min_velocity <= vel <= self.max_velocity and ext >= self.min_extension:
+                event = self._classify_punch(
+                    arm="left",
+                    is_lead=left_is_lead,
+                    vel=vel,
+                    ext=ext,
+                    features=features,
+                    smoothed=smoothed,
+                    opponent_smoothed=opponent_smoothed,
+                    frame_idx=frame_idx,
+                    timestamp=timestamp
+                )
+                if event:
+                    events.append(event)
+                    state.left_cooldown = self.cooldown_frames
+
+        # Check Right Arm
+        if state.right_cooldown == 0:
+            vel = magnitude(smoothed.right_wrist_velocity) or 0.0
             ext = features.right_arm_extension
+            if self.min_velocity <= vel <= self.max_velocity and ext >= self.min_extension:
+                event = self._classify_punch(
+                    arm="right",
+                    is_lead=not left_is_lead,
+                    vel=vel,
+                    ext=ext,
+                    features=features,
+                    smoothed=smoothed,
+                    opponent_smoothed=opponent_smoothed,
+                    frame_idx=frame_idx,
+                    timestamp=timestamp
+                )
+                if event:
+                    events.append(event)
+                    state.right_cooldown = self.cooldown_frames
+                    
+        return events
 
-        shoulder_y = features.head_center[1] + (features.shoulder_width or 0.0) if features.head_center else 0.0
-
-        # Uppercut: wrist moving upward significantly
-        sw = features.shoulder_width or 1.0
-        if dy < -0.5 * sw and wrist_y < shoulder_y:
-            return ("UPPERCUT", min(1.0, ext))
-
-        # Hook: large horizontal component, wrist not fully extended forward
-        if abs(dx) > abs(dy) * 1.5 and ext < 0.85:
-            return ("HOOK", min(1.0, ext))
-
-        # Jab = lead hand (left for orthodox), Cross = rear hand
+    def _classify_punch(
+        self,
+        arm: str,
+        is_lead: bool,
+        vel: float,
+        ext: float,
+        features: PoseFeatures,
+        smoothed: SmoothedFeatures,
+        opponent_smoothed: Optional[SmoothedFeatures],
+        frame_idx: int,
+        timestamp: float
+    ) -> Optional[StrikeEvent]:
+        
+        # Get hand specific vectors
         if arm == "left":
-            return ("JAB", min(1.0, ext))
-        return ("CROSS", min(1.0, ext))
+            wrist = smoothed.left_wrist
+            wrist_vel_vec = smoothed.left_wrist_velocity
+            shoulder = smoothed.left_shoulder if hasattr(smoothed, 'left_shoulder') else None
+        else:
+            wrist = smoothed.right_wrist
+            wrist_vel_vec = smoothed.right_wrist_velocity
+            shoulder = smoothed.right_shoulder if hasattr(smoothed, 'right_shoulder') else None
+            
+        if not wrist or not wrist_vel_vec:
+            return None
+            
+        dx, dy = wrist_vel_vec
+        
+        # Distance to opponent
+        opp_dist = None
+        if opponent_smoothed and opponent_smoothed.body_center:
+            opp_dist = distance(wrist, opponent_smoothed.body_center)
 
+        # Target zone estimation
+        target = "UNKNOWN"
+        if opponent_smoothed:
+            opp_head = opponent_smoothed.head_center
+            opp_body = opponent_smoothed.body_center
+            if opp_head and opp_body:
+                dist_to_head = distance(wrist, opp_head) or float('inf')
+                dist_to_body = distance(wrist, opp_body) or float('inf')
+                target = "HEAD" if dist_to_head < dist_to_body else "BODY"
+
+        # Base confidence calculation (heuristic based on velocity & extension)
+        conf = min(1.0, (vel / (self.min_velocity * 2.0)) * 0.5 + ext * 0.5)
+
+        # Action logic
+        action = "PUNCH"
+        
+        sw = features.shoulder_width or 50.0
+        
+        # Uppercut: wrist moving sharply upwards (negative Y in image space)
+        if dy < -0.5 * sw and abs(dy) > abs(dx):
+            action = "UPPERCUT"
+            
+        # Hook: lateral movement dominant, arm not fully extended
+        elif abs(dx) > abs(dy) * 1.5 and ext < 0.85:
+            action = "HOOK"
+            
+        # Straight punches
+        else:
+            if is_lead:
+                action = "JAB"
+            else:
+                action = "CROSS"
+
+        # Debugging
+        if self.debug:
+            print(f"\n[DEBUG STRIKE] Frame: {frame_idx}")
+            print(f"ACTION: {action}")
+            print(f"fighter: {features.track_id}")
+            print(f"hand: {arm} (lead={is_lead})")
+            print(f"wrist velocity: {vel:.1f} (dx:{dx:.1f}, dy:{dy:.1f})")
+            print(f"forward extension: {ext:.2f}")
+            print(f"confidence: {conf:.2f}")
+
+        return StrikeEvent(
+            fighter_id=features.track_id,
+            frame_number=frame_idx,
+            timestamp=timestamp,
+            action=action,
+            hand=arm,
+            confidence=round(conf, 2),
+            wrist_position=wrist,
+            opponent_distance=round(opp_dist, 1) if opp_dist else None,
+            target_zone_estimate=target
+        )
