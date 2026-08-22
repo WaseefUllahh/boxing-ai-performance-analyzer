@@ -110,21 +110,15 @@ def main() -> int:
         )
         return 1
 
+    from src.result_manager import ResultManager
+    rm = ResultManager(video_path.name)
+
     # ── Run pipeline ──────────────────────────────────────────────────────
-    processor = VideoProcessor(
-        video_path=video_path,
-        model_name=model_name,
-        output_dir=output_dir,
-        confidence=conf,
-        max_fighters=max_fighters,
-        show_display=show_display,
-    )
-    processor.run()
+    processor = VideoProcessor(rm)
+    processor.process_video(video_path=video_path)
 
     print("\n[DONE] Analysis complete.")
-    print(f"  Annotated video : {output_dir}")
-    print(f"  Stats CSV       : {CFG.STATS_CSV}")
-    print(f"  Summary JSON    : {CFG.SUMMARY_JSON}")
+    print(f"  Result directory: {rm.output_dir}")
     print(f"\nLaunch dashboard: streamlit run dashboard/app.py")
     return 0
 
