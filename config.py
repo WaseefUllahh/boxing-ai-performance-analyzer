@@ -144,6 +144,19 @@ STANCE_FOOT_DIST_RATIO: float = 0.1
 # Maximum number of frames to store in temporal histories
 HISTORY_LENGTH: int = 15
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Video Annotation & HUD Rendering
+# ─────────────────────────────────────────────────────────────────────────────
+# Colors in BGR format for OpenCV
+FIGHTER_1_COLOR: tuple[int, int, int] = (255, 100, 100) # Blue
+FIGHTER_2_COLOR: tuple[int, int, int] = (100, 100, 255) # Red
+
+# Length of movement trails
+TRAIL_LENGTH: int = 30
+
+# How many frames a strike/defense popup stays on screen
+EVENT_POPUP_FRAMES: int = 45
+
 # Alpha value for Exponential Moving Average (EMA) smoothing [0, 1]
 # Lower means more smoothing, higher means more responsive
 TEMPORAL_SMOOTHING_FACTOR: float = 0.3
@@ -210,6 +223,10 @@ class _Config:
     STANCE_CONFIDENCE_FRAMES = getattr(CFG, 'STANCE_CONFIDENCE_FRAMES', 30) if 'CFG' in globals() else 30
     STANCE_FOOT_DIST_RATIO = getattr(CFG, 'STANCE_FOOT_DIST_RATIO', 0.1) if 'CFG' in globals() else 0.1
     HISTORY_LENGTH = HISTORY_LENGTH
+    FIGHTER_1_COLOR = getattr(CFG, 'FIGHTER_1_COLOR', (255, 100, 100)) if 'CFG' in globals() else (255, 100, 100)
+    FIGHTER_2_COLOR = getattr(CFG, 'FIGHTER_2_COLOR', (100, 100, 255)) if 'CFG' in globals() else (100, 100, 255)
+    TRAIL_LENGTH = getattr(CFG, 'TRAIL_LENGTH', 30) if 'CFG' in globals() else 30
+    EVENT_POPUP_FRAMES = getattr(CFG, 'EVENT_POPUP_FRAMES', 45) if 'CFG' in globals() else 45
     TEMPORAL_SMOOTHING_FACTOR = TEMPORAL_SMOOTHING_FACTOR
     ACTION_COOLDOWN = ACTION_COOLDOWN
     SMOOTHING_WINDOW = SMOOTHING_WINDOW

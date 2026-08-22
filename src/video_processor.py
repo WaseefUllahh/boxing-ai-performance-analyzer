@@ -1,310 +1,276 @@
 """
-src/video_processor.py — Orchestrates the full frame-by-frame pipeline.
+src/video_processor.py — End-to-End Pipeline & Video Renderer
 
-Pipeline (per frame)
---------------------
-1. VideoReader.frames()        → validated, streaming frame iterator
-2. FighterTracker.update()     → tracked fighters + keypoints
-3. PoseFeatureExtractor.extract()  → PoseFeatures per fighter
-4. StrikeDetector.detect()     → StrikeResult per fighter
-5. DefenseDetector.detect()    → DefenseResult per fighter
-6. FightAnalyzer.update()      → accumulate stats
-7. Annotate frame              → draw bboxes, skeletons, labels
-8. Write frame to output video
-9. (Optional) imshow preview
-
-At end-of-video:
-- FightAnalyzer.finalize()     → CSV + JSON
-- Release all OpenCV resources
+Responsibilities
+----------------
+- Consume video frames and route them through the full analytics stack.
+- Render bounding boxes, skeletons, and movement trails.
+- Render dynamic HUD (top banner, sidebars, popups, activity graph).
+- Write annotated frames to an output video file seamlessly.
+- Generate and append a final statistics card to the end of the video.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Optional
-
 import cv2
 import numpy as np
-from tqdm import tqdm
+import collections
+from pathlib import Path
+from typing import List, Dict, Tuple, Optional
 
 from config import CFG
-from src.video_io import VideoReader, print_video_info
+from src.video_io import VideoReader
 from src.tracker import FighterTracker
 from src.pose_features import PoseFeatureExtractor
-from src.strike_detector import StrikeDetector
-from src.defense_detector import DefenseDetector
+from src.temporal_features import TemporalFeatureManager
+from src.strike_detector import StrikeDetector, StrikeEvent
+from src.defense_detector import DefenseAndOutcomeDetector, DefenseEvent
+from src.movement_analyzer import MovementAnalyzer
 from src.fight_analyzer import FightAnalyzer
 
-
-# ---------------------------------------------------------------------------
-# COCO skeleton pairs for drawing
-# ---------------------------------------------------------------------------
-SKELETON_PAIRS = [
-    (5, 6),   # shoulders
-    (5, 7),   # l shoulder → l elbow
-    (7, 9),   # l elbow → l wrist
-    (6, 8),   # r shoulder → r elbow
-    (8, 10),  # r elbow → r wrist
-    (5, 11),  # l shoulder → l hip
-    (6, 12),  # r shoulder → r hip
-    (11, 12), # hips
-    (11, 13), # l hip → l knee
-    (13, 15), # l knee → l ankle
-    (12, 14), # r hip → r knee
-    (14, 16), # r knee → r ankle
-    (0, 5),   # nose → l shoulder
-    (0, 6),   # nose → r shoulder
-]
-
-
 class VideoProcessor:
-    """
-    Orchestrates the end-to-end boxing analysis pipeline.
-
-    Parameters
-    ----------
-    video_path : Path
-        Input video file.
-    model_name : str
-        Ultralytics YOLO Pose model name.
-    output_dir : Path
-        Directory where annotated video and stats are saved.
-    confidence : float
-        YOLO detection confidence threshold.
-    max_fighters : int
-        Maximum fighters to track per frame.
-    show_display : bool
-        Whether to show a live preview window (disable for headless runs).
-    """
-
-    def __init__(
-        self,
-        video_path:   Path,
-        model_name:   str  = CFG.MODEL_NAME,
-        output_dir:   Path = CFG.OUTPUT_DIR,
-        confidence:   float = CFG.CONFIDENCE_THRESHOLD,
-        max_fighters: int   = CFG.MAX_FIGHTERS,
-        show_display: bool  = True,
-    ) -> None:
-        self.video_path   = Path(video_path)
-        self.model_name   = model_name
-        self.output_dir   = Path(output_dir)
-        self.confidence   = confidence
-        self.max_fighters = max_fighters
-        self.show_display = show_display
-
-        # Sub-components (created fresh per run)
-        self._tracker   = FighterTracker(
-            model_name   = model_name,
-            tracker_cfg  = CFG.TRACKER,
-            confidence   = confidence,
-            iou          = CFG.IOU_THRESHOLD,
-            max_fighters = max_fighters,
+    def __init__(self, output_path: Path):
+        self.output_path = output_path
+        self.writer = None
+        self.f1_color = getattr(CFG, 'FIGHTER_1_COLOR', (255, 100, 100))
+        self.f2_color = getattr(CFG, 'FIGHTER_2_COLOR', (100, 100, 255))
+        self.trail_len = getattr(CFG, 'TRAIL_LENGTH', 30)
+        self.popup_frames = getattr(CFG, 'EVENT_POPUP_FRAMES', 45)
+        
+        # State
+        self.trails: Dict[int, collections.deque] = collections.defaultdict(
+            lambda: collections.deque(maxlen=self.trail_len)
         )
-        self._feat_extractor = PoseFeatureExtractor()
-        self._strike_det     = StrikeDetector()
-        self._defense_det    = DefenseDetector()
-        self._analyzer       = FightAnalyzer()
+        # Popups: fighter_id -> list of {"text": str, "frames_left": int, "color": tuple}
+        self.popups: Dict[int, List[Dict]] = collections.defaultdict(list)
+        
+        # We need cumulative data for the HUD and final card
+        self.all_strikes: List[StrikeEvent] = []
+        self.all_defenses: List[DefenseEvent] = []
+        self.final_movement = {}
+        
+        self.fps = 30.0
+        self.total_frames = 0
+        self.aggregator = FightAnalyzer()
+        
+    def _init_writer(self, width: int, height: int, fps: float):
+        if self.writer is None:
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            self.writer = cv2.VideoWriter(str(self.output_path), fourcc, fps, (width, height))
+            self.fps = fps
+            
+    def _get_color(self, fid: int) -> Tuple[int, int, int]:
+        # Fighter 1 is Blue, Fighter 2 is Red. Fallback is Green.
+        if fid == 1: return self.f1_color
+        if fid == 2: return self.f2_color
+        return (100, 255, 100)
 
-    # ------------------------------------------------------------------
-    def run(self) -> None:
-        """
-        Execute the full pipeline on the configured video.
+    def _draw_hud(self, frame: np.ndarray, width: int, height: int, stats: Dict):
+        """Draws the transparent banners and HUD elements."""
+        overlay = frame.copy()
+        
+        # Top banner
+        cv2.rectangle(overlay, (0, 0), (width, 60), (0, 0, 0), -1)
+        
+        # Sidebars
+        sidebar_w = 250
+        cv2.rectangle(overlay, (0, 60), (sidebar_w, height), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (width - sidebar_w, 60), (width, height), (0, 0, 0), -1)
+        
+        # Apply transparency
+        alpha = 0.6
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        
+        # Top Text
+        title = "BOXING AI PERFORMANCE ANALYZER"
+        cv2.putText(frame, title, (width//2 - 200, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        
+        # Left Sidebar (Fighter 1)
+        f1_stats = stats.get("fighters", {}).get(1, {})
+        self._draw_sidebar_text(frame, 10, 100, "FIGHTER 1", self.f1_color, f1_stats)
+        
+        # Right Sidebar (Fighter 2)
+        f2_stats = stats.get("fighters", {}).get(2, {})
+        self._draw_sidebar_text(frame, width - sidebar_w + 10, 100, "FIGHTER 2", self.f2_color, f2_stats)
 
-        Video I/O is fully delegated to VideoReader which:
-        - validates file existence and codec compatibility
-        - streams frames one-at-a-time (no full-video RAM load)
-        - handles corrupted/dropped frames gracefully
-        - guarantees VideoCapture.release() via context manager
-        """
-        # ── Open + validate video (raises VideoIOError on failure) ────────
-        with VideoReader(self.video_path) as reader:
-            meta = reader.meta
+    def _draw_sidebar_text(self, frame: np.ndarray, x: int, y: int, title: str, color: Tuple, stats: Dict):
+        cv2.putText(frame, title, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        y += 40
+        
+        lines = [
+            f"Stance: {stats.get('stance', 'UNKNOWN')}",
+            f"Punches: {stats.get('total_punches', 0)}",
+            f"Landed (est): {stats.get('possible_landed', 0)}",
+            f"Missed (est): {stats.get('possible_missed', 0)}",
+            f"Blocks: {stats.get('blocks', 0)}",
+            f"Dodges: {stats.get('dodges', 0)}",
+            f"Activity: {stats.get('activity_score', 0.0):.1f}"
+        ]
+        
+        for line in lines:
+            cv2.putText(frame, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+            y += 30
 
-            # Print validated metadata
-            print_video_info(self.video_path)
-
-            out_fps = CFG.OUTPUT_VIDEO_FPS if CFG.OUTPUT_VIDEO_FPS > 0 else meta.fps
-
-            # ── Output video writer ───────────────────────────────────────
-            self.output_dir.mkdir(parents=True, exist_ok=True)
-            out_path = self.output_dir / f"annotated_{self.video_path.stem}.mp4"
-            fourcc = cv2.VideoWriter_fourcc(*CFG.OUTPUT_VIDEO_CODEC)
-            writer = cv2.VideoWriter(
-                str(out_path), fourcc, out_fps, (meta.width, meta.height)
-            )
-
-            if not writer.isOpened():
-                raise IOError(
-                    f"Could not create output video writer at {out_path}\n"
-                    f"Codec '{CFG.OUTPUT_VIDEO_CODEC}' may not be available on this system."
-                )
-
-            # ── Main loop — frame-by-frame streaming ──────────────────────
-            try:
-                with tqdm(
-                    total=meta.frame_count or None,
-                    desc="Processing",
-                    unit="frame",
-                    dynamic_ncols=True,
-                ) as pbar:
-                    for frame_idx, frame in reader.frames():
-                        annotated = self._process_frame(
-                            frame, frame_idx, meta.height
-                        )
-                        writer.write(annotated)
-
-                        if self.show_display:
-                            cv2.imshow(
-                                "Boxing Analyzer — press Q to quit", annotated
-                            )
-                            if cv2.waitKey(1) & 0xFF == ord("q"):
-                                print("\n[VideoProcessor] User quit early.")
-                                break
-
-                        pbar.update(1)
-
-            finally:
-                # VideoReader.__exit__ releases cap; release writer here
-                writer.release()
-                if self.show_display:
-                    cv2.destroyAllWindows()
-
-        print(f"[VideoProcessor] Annotated video → {out_path}")
-
-        # ── Finalize stats ────────────────────────────────────────────────
-        summary = self._analyzer.finalize()
-        self._print_summary(summary)
-
-    # ------------------------------------------------------------------
-    def _process_frame(
-        self,
-        frame: np.ndarray,
-        frame_idx: int,
-        frame_height: int,
-    ) -> np.ndarray:
-        """Run the pipeline on a single frame and return annotated copy."""
-        annotated = frame.copy()
-
-        # 1. Track
-        tracked = self._tracker.update(frame)
-
-        # 2. Features / Strike / Defense per fighter
-        features  = {}
-        strikes   = {}
-        defenses  = {}
-
-        for fighter in tracked:
-            tid = fighter["track_id"]
-            kps = fighter["keypoints"]
-            feat = self._feat_extractor.extract(
-                keypoints=kps,
-                track_id=tid,
-                frame_height=frame_height,
-                bbox_center=fighter["center"]
-            )
-            strike  = self._strike_det.detect(feat)
-            defense = self._defense_det.detect(feat)
-
-            features[tid]  = feat
-            strikes[tid]   = strike
-            defenses[tid]  = defense
-
-        # 3. Aggregate
-        self._analyzer.update(frame_idx, tracked, strikes, defenses, features)
-
-        # 4. Annotate
-        annotated = self._annotate(annotated, tracked, strikes, defenses, features)
-
-        return annotated
-
-    # ------------------------------------------------------------------
-    def _annotate(
-        self,
-        frame: np.ndarray,
-        tracked: list[dict],
-        strikes:  dict,
-        defenses: dict,
-        features: dict,
-    ) -> np.ndarray:
-        """Draw bounding boxes, skeletons, and action labels on the frame."""
-
-        color_keys = list(CFG.COLORS.keys())
-
-        for idx, fighter in enumerate(tracked):
-            tid  = fighter["track_id"]
-            bbox = fighter["bbox"]
-            kps  = fighter["keypoints"]
-
-            # Pick colour by slot index (0 or 1) for visual consistency
-            color_key = f"fighter_{min(idx, 1)}"
-            color = CFG.COLORS.get(color_key, (0, 255, 0))
-
-            x1, y1, x2, y2 = bbox
-
+    def _draw_fighters(self, frame: np.ndarray, tracked: List[Dict], smoothed_dict: Dict):
+        """Draw bounding boxes, skeletons, and trails."""
+        for f in tracked:
+            tid = f.get("track_id", f.get("bot_sort_id", -1))
+            color = self._get_color(tid)
+            
             # Bounding box
+            box = f["bbox"]
+            x1, y1, x2, y2 = map(int, box)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, f"ID: {tid}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            
+            # Skeleton (simple lines if points exist)
+            kps = f["keypoints"]
+            # Just draw arms for MVP visualization
+            if len(kps) > 10:
+                l_s, l_e, l_w = kps[5][:2], kps[7][:2], kps[9][:2]
+                r_s, r_e, r_w = kps[6][:2], kps[8][:2], kps[10][:2]
+                for (p1, p2) in [(l_s, l_e), (l_e, l_w), (r_s, r_e), (r_e, r_w)]:
+                    if p1[0] > 0 and p2[0] > 0:
+                        cv2.line(frame, (int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), color, 2)
+            
+            # Trails
+            sf = smoothed_dict.get(tid)
+            if sf and sf.body_center:
+                self.trails[tid].append(sf.body_center)
+                pts = np.array([pt for pt in self.trails[tid]], np.int32).reshape((-1, 1, 2))
+                cv2.polylines(frame, [pts], False, color, 2)
 
-            # Label background + text
-            strike  = strikes.get(tid)
-            defense = defenses.get(tid)
-            action  = strike.label  if (strike and strike.label != "NONE")  else ""
-            daction = defense.label if (defense and defense.label != "NONE") else ""
-            label   = f"F{tid}"
-            if action:  label += f" | {action}"
-            if daction: label += f" | {daction}"
+    def _draw_popups(self, frame: np.ndarray, tracked: List[Dict]):
+        """Render floating text events above fighters."""
+        for f in tracked:
+            tid = f.get("track_id", f.get("bot_sort_id", -1))
+            box = f["bbox"]
+            x1, y1, x2, y2 = map(int, box)
+            
+            # Clean up old popups
+            active_popups = []
+            y_offset = y1 - 40
+            
+            for p in self.popups[tid]:
+                if p["frames_left"] > 0:
+                    text = p["text"]
+                    c = p["color"]
+                    
+                    # Draw background rect for readability
+                    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    cv2.rectangle(frame, (x1, y_offset - th - 5), (x1 + tw, y_offset + 5), (0, 0, 0), -1)
+                    cv2.putText(frame, text, (x1, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, c, 2)
+                    
+                    p["frames_left"] -= 1
+                    y_offset -= 35
+                    active_popups.append(p)
+                    
+            self.popups[tid] = active_popups
 
-            (tw, th), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
-            cv2.rectangle(frame, (x1, y1 - th - baseline - 4), (x1 + tw + 4, y1), CFG.COLORS["label_bg"], -1)
-            cv2.putText(frame, label, (x1 + 2, y1 - baseline - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, CFG.COLORS["label_text"], 1, cv2.LINE_AA)
+    def _draw_final_card(self, width: int, height: int, stats: Dict):
+        """Render a solid summary card for 5 seconds at the end."""
+        card = np.zeros((height, width, 3), dtype=np.uint8)
+        
+        cv2.putText(card, "BOXING AI PERFORMANCE ANALYZER", (width//2 - 300, 100), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3)
+        cv2.putText(card, "FIGHT SUMMARY (AI-ESTIMATED METRICS)", (width//2 - 300, 160), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (100, 200, 255), 2)
+        
+        # Fighter 1
+        f1 = stats.get("fighters", {}).get(1, {})
+        self._draw_sidebar_text(card, width//4 - 150, 300, "FIGHTER 1 (Blue)", self.f1_color, f1)
+        
+        # Fighter 2
+        f2 = stats.get("fighters", {}).get(2, {})
+        self._draw_sidebar_text(card, 3*width//4 - 150, 300, "FIGHTER 2 (Red)", self.f2_color, f2)
+        
+        # Write for 5 seconds
+        frames_to_write = int(self.fps * 5)
+        for _ in range(frames_to_write):
+            self.writer.write(card)
 
-            # Skeleton
-            self._draw_skeleton(frame, kps, color)
+    def process_video(self, video_path: Path, max_frames: Optional[int] = None):
+        tracker = FighterTracker(
+            model_name=CFG.MODEL_NAME, tracker_cfg=CFG.TRACKER, 
+            confidence=CFG.CONFIDENCE_THRESHOLD, iou=CFG.IOU_THRESHOLD, 
+            max_fighters=CFG.MAX_FIGHTERS, device=""
+        )
+        extractor = PoseFeatureExtractor()
+        temporal_mgr = TemporalFeatureManager()
+        strike_det = StrikeDetector()
+        defense_det = DefenseAndOutcomeDetector()
+        movement_mgr = MovementAnalyzer()
+        
+        print(f"Starting Video Processing: {video_path}")
+        
+        with VideoReader(video_path) as reader:
+            meta = reader.meta
+            self._init_writer(meta.width, meta.height, meta.fps)
+            self.total_frames = meta.frame_count if max_frames is None else min(meta.frame_count, max_frames)
+            
+            for frame_idx, frame in reader.frames(start_frame=0, end_frame=max_frames):
+                # 1. Models
+                tracked = tracker.update(frame)
+                
+                feats_dict = {}
+                for fighter in tracked:
+                    tid = fighter.get("track_id", fighter.get("bot_sort_id", -1))
+                    kps = fighter["keypoints"]
+                    feat = extractor.extract(kps, tid, meta.height, fighter.get("center"))
+                    feats_dict[tid] = feat
+                    
+                smoothed_dict = temporal_mgr.update(list(feats_dict.values()))
+                
+                new_strikes = []
+                for tid, feat in feats_dict.items():
+                    smoothed = smoothed_dict.get(tid)
+                    if not smoothed: continue
+                    opp_smoothed = next((sf for oid, sf in smoothed_dict.items() if oid != tid), None)
+                    events = strike_det.detect(feat, smoothed, opp_smoothed, frame_idx, meta.fps)
+                    new_strikes.extend(events)
+                    
+                resolved_strikes, defense_events = defense_det.update(
+                    new_strikes, feats_dict, smoothed_dict, frame_idx, meta.fps
+                )
+                self.all_strikes.extend(resolved_strikes)
+                self.all_defenses.extend(defense_events)
+                
+                self.final_movement = movement_mgr.update(feats_dict, smoothed_dict, frame_idx)
+                
+                # 2. Add Popups
+                for s in resolved_strikes:
+                    c = (0, 255, 0) if s.event_type == "POSSIBLE_LANDED" else (0, 165, 255)
+                    self.popups[s.fighter_id].insert(0, {
+                        "text": f"{s.action}: {s.event_type}",
+                        "frames_left": self.popup_frames,
+                        "color": c
+                    })
+                    
+                for d in defense_events:
+                    self.popups[d.fighter_id].insert(0, {
+                        "text": d.action,
+                        "frames_left": self.popup_frames,
+                        "color": (255, 255, 0)
+                    })
+                    
+                # 3. Live HUD Stats (Run aggregator up to this frame)
+                live_stats = self.aggregator.aggregate(
+                    self.all_strikes, self.all_defenses, self.final_movement, meta.fps, frame_idx+1
+                )
+                
+                # 4. Rendering
+                self._draw_fighters(frame, tracked, smoothed_dict)
+                self._draw_hud(frame, meta.width, meta.height, live_stats)
+                self._draw_popups(frame, tracked)
+                
+                self.writer.write(frame)
+                
+                if frame_idx % 50 == 0:
+                    print(f"Processed {frame_idx}/{self.total_frames} frames...")
 
-        return frame
-
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _draw_skeleton(
-        frame: np.ndarray,
-        keypoints: np.ndarray,
-        color: tuple[int, int, int],
-    ) -> None:
-        """Draw COCO keypoint skeleton on the frame in-place."""
-        skel_color = CFG.COLORS["skeleton"]
-
-        # Draw limb connections
-        for (i, j) in SKELETON_PAIRS:
-            if i >= len(keypoints) or j >= len(keypoints):
-                continue
-            xi, yi, ci = keypoints[i]
-            xj, yj, cj = keypoints[j]
-            if ci < CFG.KP_CONFIDENCE_THRESHOLD or cj < CFG.KP_CONFIDENCE_THRESHOLD:
-                continue
-            cv2.line(frame, (int(xi), int(yi)), (int(xj), int(yj)), skel_color, 1, cv2.LINE_AA)
-
-        # Draw keypoint dots
-        for kp in keypoints:
-            x, y, c = kp
-            if c < CFG.KP_CONFIDENCE_THRESHOLD:
-                continue
-            cv2.circle(frame, (int(x), int(y)), 3, color, -1)
-
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _print_summary(summary: dict) -> None:
-        print("\n" + "=" * 60)
-        print("  FIGHT SUMMARY")
-        print("=" * 60)
-        print(f"  Frames processed: {summary.get('total_frames_processed', 0)}")
-        for fid, stats in summary.get("fighters", {}).items():
-            print(f"\n  Fighter {fid} (track_id={stats['track_id']})")
-            print(f"    Punches  : {stats['total_punches']}"
-                  f"  (J:{stats['jabs']} C:{stats['crosses']}"
-                  f" H:{stats['hooks']} U:{stats['uppercuts']})")
-            print(f"    Defense  : Guards={stats['guards']}  "
-                  f"Slips={stats['slips']}  Ducks={stats['ducks']}")
-            print(f"    Distance : {stats['total_distance_px']:.0f} px")
-            print(f"    Aggression: {stats['aggression_score']:.4f}")
-        print("=" * 60)
+        print("\nRendering Final Stats Card...")
+        final_stats = self.aggregator.aggregate(
+            self.all_strikes, self.all_defenses, self.final_movement, meta.fps, self.total_frames
+        )
+        self._draw_final_card(meta.width, meta.height, final_stats)
+        
+        self.writer.release()
+        print(f"[DONE] Video saved to {self.output_path}")
