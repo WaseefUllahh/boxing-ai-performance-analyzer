@@ -105,13 +105,22 @@ DUCK_HIP_DROP_RATIO: float = 0.15
 SLIP_LATERAL_RATIO: float = 0.20
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Movement analysis
+# Temporal Analysis & Smoothing
 # ─────────────────────────────────────────────────────────────────────────────
-# Minimum pixel displacement of the bounding box centre per frame
-# to count as "movement" (filters micro-jitter)
+# Minimum pixel displacement per frame to count as "movement"
 MOVEMENT_MIN_PIXELS: float = 3.0
 
-# Smoothing window (frames) for velocity / position smoothing
+# Maximum number of frames to store in temporal histories
+HISTORY_LENGTH: int = 15
+
+# Alpha value for Exponential Moving Average (EMA) smoothing [0, 1]
+# Lower means more smoothing, higher means more responsive
+TEMPORAL_SMOOTHING_FACTOR: float = 0.3
+
+# Frames to wait before triggering the same discrete action again
+ACTION_COOLDOWN: int = 15
+
+# Smoothing window (frames) for basic velocity / position smoothing 
 SMOOTHING_WINDOW: int = 5
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -158,6 +167,9 @@ class _Config:
     DUCK_HIP_DROP_RATIO = DUCK_HIP_DROP_RATIO
     SLIP_LATERAL_RATIO = SLIP_LATERAL_RATIO
     MOVEMENT_MIN_PIXELS = MOVEMENT_MIN_PIXELS
+    HISTORY_LENGTH = HISTORY_LENGTH
+    TEMPORAL_SMOOTHING_FACTOR = TEMPORAL_SMOOTHING_FACTOR
+    ACTION_COOLDOWN = ACTION_COOLDOWN
     SMOOTHING_WINDOW = SMOOTHING_WINDOW
     OUTPUT_VIDEO_CODEC = OUTPUT_VIDEO_CODEC
     OUTPUT_VIDEO_FPS = OUTPUT_VIDEO_FPS
