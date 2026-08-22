@@ -22,9 +22,10 @@ from config import CFG
 from src.video_io import VideoReader
 from src.tracker import FighterTracker
 from src.pose_features import PoseFeatureExtractor
+from src.events import FightEvent
 from src.temporal_features import TemporalFeatureManager
-from src.strike_detector import StrikeDetector, StrikeEvent
-from src.defense_detector import DefenseAndOutcomeDetector, DefenseEvent
+from src.strike_detector import StrikeDetector
+from src.defense_detector import DefenseAndOutcomeDetector
 from src.movement_analyzer import MovementAnalyzer
 from src.fight_analyzer import FightAnalyzer
 from src.result_manager import ResultManager
@@ -39,21 +40,8 @@ class VideoProcessor:
         self.trail_len = getattr(CFG, 'TRAIL_LENGTH', 30)
         self.popup_frames = getattr(CFG, 'EVENT_POPUP_FRAMES', 45)
         
-        # State
-        self.trails: Dict[int, collections.deque] = collections.defaultdict(
-            lambda: collections.deque(maxlen=self.trail_len)
-        )
-        # Popups: fighter_id -> list of {"text": str, "frames_left": int, "color": tuple}
-        self.popups: Dict[int, List[Dict]] = collections.defaultdict(list)
-        
-        # We need cumulative data for the HUD and final card
-        self.all_strikes: List[StrikeEvent] = []
-        self.all_defenses: List[DefenseEvent] = []
-        self.final_movement = {}
-        
         self.fps = 30.0
         self.total_frames = 0
-        self.aggregator = FightAnalyzer()
         
     def _init_writer(self, width: int, height: int, fps: float):
         if self.writer is None:
@@ -113,7 +101,7 @@ class VideoProcessor:
             cv2.putText(frame, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
             y += 30
 
-    def _draw_fighters(self, frame: np.ndarray, tracked: List[Dict], smoothed_dict: Dict):
+    def _draw_fighters(self, frame: np.ndarray, tracked: List[Dict], smoothed_dict: Dict, trails: Dict[int, collections.deque]):
         """Draw bounding boxes, skeletons, and trails."""
         for f in tracked:
             tid = f.get("track_id", f.get("bot_sort_id", -1))
@@ -138,11 +126,11 @@ class VideoProcessor:
             # Trails
             sf = smoothed_dict.get(tid)
             if sf and sf.body_center:
-                self.trails[tid].append(sf.body_center)
-                pts = np.array([pt for pt in self.trails[tid]], np.int32).reshape((-1, 1, 2))
+                trails[tid].append(sf.body_center)
+                pts = np.array([pt for pt in trails[tid]], np.int32).reshape((-1, 1, 2))
                 cv2.polylines(frame, [pts], False, color, 2)
 
-    def _draw_popups(self, frame: np.ndarray, tracked: List[Dict]):
+    def _draw_popups(self, frame: np.ndarray, tracked: List[Dict], popups: Dict[int, List[Dict]]):
         """Render floating text events above fighters."""
         for f in tracked:
             tid = f.get("track_id", f.get("bot_sort_id", -1))
@@ -153,7 +141,7 @@ class VideoProcessor:
             active_popups = []
             y_offset = y1 - 40
             
-            for p in self.popups[tid]:
+            for p in popups[tid]:
                 if p["frames_left"] > 0:
                     text = p["text"]
                     c = p["color"]
@@ -167,7 +155,7 @@ class VideoProcessor:
                     y_offset -= 35
                     active_popups.append(p)
                     
-            self.popups[tid] = active_popups
+            popups[tid] = active_popups
 
     def _draw_final_card(self, width: int, height: int, stats: Dict):
         """Render a solid summary card for 5 seconds at the end."""
@@ -201,6 +189,15 @@ class VideoProcessor:
         defense_det = DefenseAndOutcomeDetector()
         movement_mgr = MovementAnalyzer()
         
+        # State scoped to this process run to prevent leakage
+        trails: Dict[int, collections.deque] = collections.defaultdict(
+            lambda: collections.deque(maxlen=self.trail_len)
+        )
+        popups: Dict[int, List[Dict]] = collections.defaultdict(list)
+        all_events: List[FightEvent] = []
+        final_movement = {}
+        aggregator = FightAnalyzer()
+        
         print(f"Starting Video Processing: {video_path}")
         
         with VideoReader(video_path) as reader:
@@ -230,39 +227,38 @@ class VideoProcessor:
                     events = strike_det.detect(feat, smoothed, opp_smoothed, frame_idx, meta.fps)
                     new_strikes.extend(events)
                     
-                resolved_strikes, defense_events = defense_det.update(
+                resolved_events = defense_det.update(
                     new_strikes, feats_dict, smoothed_dict, frame_idx, meta.fps
                 )
-                self.all_strikes.extend(resolved_strikes)
-                self.all_defenses.extend(defense_events)
+                all_events.extend(resolved_events)
                 
-                self.final_movement = movement_mgr.update(feats_dict, smoothed_dict, frame_idx)
+                final_movement = movement_mgr.update(feats_dict, smoothed_dict, frame_idx)
                 
                 # 2. Add Popups
-                for s in resolved_strikes:
-                    c = (0, 255, 0) if s.event_type == "POSSIBLE_LANDED" else (0, 165, 255)
-                    self.popups[s.fighter_id].insert(0, {
-                        "text": f"{s.action}: {s.event_type}",
-                        "frames_left": self.popup_frames,
-                        "color": c
-                    })
-                    
-                for d in defense_events:
-                    self.popups[d.fighter_id].insert(0, {
-                        "text": d.action,
-                        "frames_left": self.popup_frames,
-                        "color": (255, 255, 0)
-                    })
+                for e in resolved_events:
+                    if e.category == "STRIKE":
+                        c = (0, 255, 0) if e.event_type == "POSSIBLE_LANDED" else (0, 165, 255)
+                        popups[e.fighter_id].insert(0, {
+                            "text": f"{e.action}: {e.event_type}",
+                            "frames_left": self.popup_frames,
+                            "color": c
+                        })
+                    elif e.category == "DEFENSE":
+                        popups[e.fighter_id].insert(0, {
+                            "text": e.action,
+                            "frames_left": self.popup_frames,
+                            "color": (255, 255, 0)
+                        })
                     
                 # 3. Live HUD Stats (Run aggregator up to this frame)
-                live_stats = self.aggregator.aggregate(
-                    self.all_strikes, self.all_defenses, self.final_movement, meta.fps, frame_idx+1
+                live_stats = aggregator.aggregate(
+                    all_events, final_movement, meta.fps, frame_idx+1
                 )
                 
                 # 4. Rendering
-                self._draw_fighters(frame, tracked, smoothed_dict)
+                self._draw_fighters(frame, tracked, smoothed_dict, trails)
                 self._draw_hud(frame, meta.width, meta.height, live_stats)
-                self._draw_popups(frame, tracked)
+                self._draw_popups(frame, tracked, popups)
                 
                 self.writer.write(frame)
                 
@@ -270,14 +266,14 @@ class VideoProcessor:
                     print(f"Processed {frame_idx}/{self.total_frames} frames...")
 
         print("\nRendering Final Stats Card...")
-        final_stats = self.aggregator.aggregate(
-            self.all_strikes, self.all_defenses, self.final_movement, meta.fps, self.total_frames
+        final_stats = aggregator.aggregate(
+            all_events, final_movement, meta.fps, self.total_frames
         )
         self._draw_final_card(meta.width, meta.height, final_stats)
         
         self.writer.release()
         
         print("\nExporting analysis data...")
-        self.result_manager.export_results(final_stats, self.all_strikes, self.all_defenses, self.final_movement)
+        self.result_manager.export_results(final_stats, all_events, final_movement)
         
         print(f"[DONE] Analysis saved to {self.result_manager.output_dir}")

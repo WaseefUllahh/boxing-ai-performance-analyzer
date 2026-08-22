@@ -51,8 +51,7 @@ def main():
     movement_mgr = MovementAnalyzer()
     aggregator = FightAnalyzer()
     
-    all_strikes = []
-    all_defenses = []
+    all_events = []
     final_movement = {}
     
     with VideoReader(video_path) as reader:
@@ -84,11 +83,10 @@ def main():
                 new_strikes.extend(events)
                 
             # Defense & Outcomes
-            resolved_strikes, defense_events = defense_det.update(
+            resolved_events = defense_det.update(
                 new_strikes, feats_dict, smoothed_dict, frame_idx, meta.fps
             )
-            all_strikes.extend(resolved_strikes)
-            all_defenses.extend(defense_events)
+            all_events.extend(resolved_events)
             
             # Movement
             final_movement = movement_mgr.update(feats_dict, smoothed_dict, frame_idx)
@@ -98,8 +96,7 @@ def main():
 
     print("\nAggregating final results...")
     stats = aggregator.aggregate(
-        strikes=all_strikes,
-        defenses=all_defenses,
+        events=all_events,
         final_movement=final_movement,
         fps=meta.fps,
         total_frames=max_frames
@@ -108,7 +105,7 @@ def main():
     print("\nExporting files...")
     rm = ResultManager(video_path.name)
     rm.set_video_metadata(meta.width, meta.height, meta.fps, max_frames)
-    rm.export_results(stats, all_strikes, all_defenses, final_movement)
+    rm.export_results(stats, all_events, final_movement)
     
     print(f"[DONE] Outputs saved to {rm.output_dir}")
     print("\nPreview of JSON output:")

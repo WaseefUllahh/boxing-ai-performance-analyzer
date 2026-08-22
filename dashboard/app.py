@@ -225,8 +225,8 @@ def main():
             st.subheader("Event Timeline")
             # Plot strikes and defenses over time
             fig3 = px.scatter(events_df, x="frame_number", y="fighter_id", 
-                              color="action", symbol="event_type",
-                              hover_data=["confidence", "target_zone"],
+                              color="action", symbol="category",
+                              hover_data=["confidence", "target_zone", "event_type"],
                               title="Events across Video Timeline")
             # Make Y axis discrete
             fig3.update_yaxes(type='category', title="Fighter ID")

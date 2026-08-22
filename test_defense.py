@@ -46,8 +46,7 @@ def main():
     strike_det = StrikeDetector()
     defense_det = DefenseAndOutcomeDetector()
     
-    all_strikes = []
-    all_defenses = []
+    all_events = []
     
     with VideoReader(video_path) as reader:
         meta = reader.meta
@@ -91,7 +90,7 @@ def main():
                 new_strikes.extend(events)
                 
             # Defense & Outcome Detection
-            resolved_strikes, defense_events = defense_det.update(
+            resolved_events = defense_det.update(
                 new_strikes=new_strikes,
                 all_features=feats_dict,
                 all_smoothed=smoothed_dict,
@@ -99,17 +98,16 @@ def main():
                 fps=meta.fps
             )
             
-            all_strikes.extend(resolved_strikes)
-            all_defenses.extend(defense_events)
+            all_events.extend(resolved_events)
             
             if frame_idx % 50 == 0:
                 print(f"Processed {frame_idx}/{max_frames} frames...")
 
     # Write using ResultManager
     rm.set_video_metadata(meta.width, meta.height, meta.fps, max_frames)
-    rm._export_events_csv(all_strikes, all_defenses)
+    rm._export_events_csv(all_events)
             
-    print(f"\n[DONE] Wrote {len(all_strikes)} strikes and {len(all_defenses)} defense events to {rm.output_dir}")
+    print(f"\n[DONE] Wrote {len(all_events)} events to {rm.output_dir}")
 
 if __name__ == "__main__":
     main()

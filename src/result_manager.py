@@ -20,8 +20,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from config import CFG
-from src.strike_detector import StrikeEvent
-from src.defense_detector import DefenseEvent
+from src.events import FightEvent
 from src.movement_analyzer import MovementStats
 
 class ResultManager:
@@ -62,8 +61,7 @@ class ResultManager:
         
     def export_results(self, 
                        fight_stats: Dict[str, Any], 
-                       strikes: List[StrikeEvent], 
-                       defenses: List[DefenseEvent],
+                       events: List[FightEvent], 
                        final_movement: Dict[int, MovementStats]):
         """Safely exports all collected metrics to the timestamped directory."""
         self.metadata["processing_time_seconds"] = round(time.time() - self.start_time, 2)
@@ -72,7 +70,7 @@ class ResultManager:
         self._export_metadata()
         self._export_fight_stats_csv(fight_stats)
         self._export_round_stats_csv(fight_stats)
-        self._export_events_csv(strikes, defenses)
+        self._export_events_csv(events)
         self._export_movement_csv(final_movement)
         
     def _export_json(self, data: Dict[str, Any], filename: str):
@@ -128,25 +126,20 @@ class ResultManager:
                 ])
         self._write_csv("round_stats.csv", headers, rows)
 
-    def _export_events_csv(self, strikes: List[StrikeEvent], defenses: List[DefenseEvent]):
+    def _export_events_csv(self, events: List[FightEvent]):
         headers = [
-            "fighter_id", "frame_number", "event_type", "action", "hand", 
-            "target_zone", "confidence", "x", "y"
+            "fighter_id", "frame_number", "category", "event_type", "action", "hand", 
+            "target_zone", "confidence", "x", "y", "supporting_features"
         ]
         rows = []
         
-        for s in strikes:
+        for e in events:
             rows.append([
-                s.fighter_id, s.frame_number, s.event_type, s.action, s.hand,
-                s.target_zone_estimate, round(s.confidence, 3),
-                round(s.wrist_position[0], 2) if s.wrist_position else None,
-                round(s.wrist_position[1], 2) if s.wrist_position else None
-            ])
-            
-        for d in defenses:
-            rows.append([
-                d.fighter_id, d.frame_number, "DEFENSE", d.action, None,
-                None, 1.0, None, None
+                e.fighter_id, e.frame_number, e.category, e.event_type, e.action, e.hand,
+                e.target_zone_estimate, round(e.confidence, 3),
+                round(e.wrist_position[0], 2) if e.wrist_position else None,
+                round(e.wrist_position[1], 2) if e.wrist_position else None,
+                e.supporting_features
             ])
             
         # Sort by frame number
