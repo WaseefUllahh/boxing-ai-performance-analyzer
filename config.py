@@ -96,8 +96,20 @@ STRIKE_COOLDOWN_FRAMES: int = 20
 DEBUG_STRIKES: bool = False
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Defense detection thresholds
+# Defense & Outcome detection thresholds (heuristic rules, tunable)
 # ─────────────────────────────────────────────────────────────────────────────
+# Number of frames to track a punch trajectory to estimate outcome
+OUTCOME_WINDOW_FRAMES: int = 10
+
+# Max distance (normalized by shoulder width) to consider a strike landed
+HIT_DISTANCE_RATIO: float = 0.8
+
+# Max distance (normalized by shoulder width) for hands to be blocking a target
+GUARD_DISTANCE_RATIO: float = 0.6
+
+# Minimum head velocity to count as a dodging movement
+DODGE_VELOCITY_THRESHOLD: float = 12.0
+
 # Wrist-to-head distance (relative to shoulder width) below which
 # the fighter is considered in a "guard" position
 GUARD_WRIST_HEAD_RATIO: float = 0.60
@@ -169,6 +181,10 @@ class _Config:
     STRIKE_MIN_EXTENSION = STRIKE_MIN_EXTENSION
     STRIKE_COOLDOWN_FRAMES = STRIKE_COOLDOWN_FRAMES
     DEBUG_STRIKES = DEBUG_STRIKES
+    OUTCOME_WINDOW_FRAMES = OUTCOME_WINDOW_FRAMES
+    HIT_DISTANCE_RATIO = HIT_DISTANCE_RATIO
+    GUARD_DISTANCE_RATIO = GUARD_DISTANCE_RATIO
+    DODGE_VELOCITY_THRESHOLD = DODGE_VELOCITY_THRESHOLD
     GUARD_WRIST_HEAD_RATIO = GUARD_WRIST_HEAD_RATIO
     DUCK_HIP_DROP_RATIO = DUCK_HIP_DROP_RATIO
     SLIP_LATERAL_RATIO = SLIP_LATERAL_RATIO
