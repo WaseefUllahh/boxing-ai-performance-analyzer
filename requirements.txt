@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────
+#  Boxing AI Performance Analyzer — Dependencies
+# ─────────────────────────────────────────────
+
+# Computer vision & deep learning
+ultralytics>=8.2.0          # YOLOv8/v11 Pose + BoT-SORT tracker
+opencv-python>=4.9.0        # Frame I/O, drawing, video writing
+
+# Numerical / data
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Dashboard
+streamlit>=1.35.0
+plotly>=5.22.0              # Interactive charts in the dashboard
+
+# Utilities
+tqdm>=4.66.0                # Progress bars for CLI pipeline
+Pillow>=10.3.0              # Image helpers used by Ultralytics
+
+# Optional (improves Ultralytics speed — comment out if install fails)
+# lap>=0.4.0                # Fast linear assignment (BoT-SORT dep)
