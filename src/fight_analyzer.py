@@ -173,34 +173,4 @@ class FightAnalyzer:
         
         return _sanitize_dict(output)
         
-    def export(self, data: Dict[str, Any], output_dir: Path):
-        """Exports the aggregated dictionary to CSV and JSON."""
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 1. JSON
-        with open(output_dir / "fight_stats.json", "w") as f:
-            json.dump(data, f, indent=4)
-            
-        # 2. Fight Stats CSV
-        with open(output_dir / "fight_stats.csv", "w", newline="") as f:
-            if data["fighters"]:
-                writer = csv.writer(f)
-                headers = ["fighter_id"] + list(list(data["fighters"].values())[0].keys())
-                writer.writerow(headers)
-                
-                for fid, stats in data["fighters"].items():
-                    row = [fid] + [stats[k] for k in headers[1:]]
-                    writer.writerow(row)
-                    
-        # 3. Round Stats CSV
-        with open(output_dir / "round_stats.csv", "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["round", "fighter_id", "total_punches", "possible_landed", "blocks", "dodges"])
-            
-            for r_idx, r_data in data.get("rounds", {}).items():
-                for fid, f_stats in r_data.items():
-                    writer.writerow([
-                        r_idx, fid, 
-                        f_stats["total_punches"], f_stats["possible_landed"], 
-                        f_stats["blocks"], f_stats["dodges"]
-                    ])
+

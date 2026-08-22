@@ -21,6 +21,7 @@ from src.tracker import FighterTracker
 from src.pose_features import PoseFeatureExtractor
 from src.temporal_features import TemporalFeatureManager
 from src.movement_analyzer import MovementAnalyzer
+from src.result_manager import ResultManager
 
 def main():
     print("=" * 60)
@@ -29,7 +30,7 @@ def main():
     
     video_path = CFG.VIDEO_PATH
     max_frames = 300
-    out_csv = CFG.OUTPUT_DIR / "movement.csv"
+    rm = ResultManager(video_path.name)
     
     tracker = FighterTracker(
         model_name=CFG.MODEL_NAME,
@@ -49,7 +50,7 @@ def main():
         meta = reader.meta
         print(f"Reading video: {video_path}")
         print(f"Frames to process: {max_frames}")
-        print(f"Writing CSV to: {out_csv}\n")
+        print(f"Writing CSV to: {rm.output_dir}\n")
         
         for frame_idx, frame in reader.frames(start_frame=0, end_frame=max_frames):
             
@@ -89,6 +90,7 @@ def main():
                 print(f"Processed {frame_idx}/{max_frames} frames...")
 
     # Write to CSV
+    out_csv = rm.output_dir / "movement.csv"
     with open(out_csv, 'w', newline='') as f:
         fieldnames = ["frame", "fighter_id", "stance", "state", "separation", 
                       "head_mov", "center_mov", "adv_frames", "ret_frames", "stat_frames"]

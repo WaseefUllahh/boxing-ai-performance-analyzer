@@ -27,10 +27,12 @@ from src.strike_detector import StrikeDetector, StrikeEvent
 from src.defense_detector import DefenseAndOutcomeDetector, DefenseEvent
 from src.movement_analyzer import MovementAnalyzer
 from src.fight_analyzer import FightAnalyzer
+from src.result_manager import ResultManager
 
 class VideoProcessor:
-    def __init__(self, output_path: Path):
-        self.output_path = output_path
+    def __init__(self, result_manager: ResultManager):
+        self.result_manager = result_manager
+        self.output_path = self.result_manager.get_video_output_path()
         self.writer = None
         self.f1_color = getattr(CFG, 'FIGHTER_1_COLOR', (255, 100, 100))
         self.f2_color = getattr(CFG, 'FIGHTER_2_COLOR', (100, 100, 255))
@@ -203,6 +205,7 @@ class VideoProcessor:
         
         with VideoReader(video_path) as reader:
             meta = reader.meta
+            self.result_manager.set_video_metadata(meta.width, meta.height, meta.fps, meta.frame_count)
             self._init_writer(meta.width, meta.height, meta.fps)
             self.total_frames = meta.frame_count if max_frames is None else min(meta.frame_count, max_frames)
             
@@ -273,4 +276,8 @@ class VideoProcessor:
         self._draw_final_card(meta.width, meta.height, final_stats)
         
         self.writer.release()
-        print(f"[DONE] Video saved to {self.output_path}")
+        
+        print("\nExporting analysis data...")
+        self.result_manager.export_results(final_stats, self.all_strikes, self.all_defenses, self.final_movement)
+        
+        print(f"[DONE] Analysis saved to {self.result_manager.output_dir}")

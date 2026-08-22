@@ -22,6 +22,7 @@ from src.pose_features import PoseFeatureExtractor
 from src.temporal_features import TemporalFeatureManager
 from src.strike_detector import StrikeDetector
 from src.defense_detector import DefenseAndOutcomeDetector
+from src.result_manager import ResultManager
 
 def main():
     print("=" * 60)
@@ -30,7 +31,7 @@ def main():
     
     video_path = CFG.VIDEO_PATH
     max_frames = 300
-    out_csv = CFG.OUTPUT_DIR / "events.csv"
+    rm = ResultManager(video_path.name)
     
     tracker = FighterTracker(
         model_name=CFG.MODEL_NAME,
@@ -52,7 +53,7 @@ def main():
         meta = reader.meta
         print(f"Reading video: {video_path}")
         print(f"Frames to process: {max_frames}")
-        print(f"Writing CSV to: {out_csv}\n")
+        print(f"Writing results to: {rm.output_dir}\n")
         
         for frame_idx, frame in reader.frames(start_frame=0, end_frame=max_frames):
             
@@ -104,29 +105,11 @@ def main():
             if frame_idx % 50 == 0:
                 print(f"Processed {frame_idx}/{max_frames} frames...")
 
-    # Write to CSV
-    with open(out_csv, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "frame", "timestamp", "fighter_id", "category", "action", "outcome", 
-            "hand", "confidence", "target_zone", "supporting_features"
-        ])
-        
-        # Write strikes
-        for s in all_strikes:
-            writer.writerow([
-                s.frame_number, f"{s.timestamp:.2f}", s.fighter_id, "STRIKE", s.action, s.event_type,
-                s.hand, s.confidence, s.target_zone_estimate, ""
-            ])
+    # Write using ResultManager
+    rm.set_video_metadata(meta.width, meta.height, meta.fps, max_frames)
+    rm._export_events_csv(all_strikes, all_defenses)
             
-        # Write defenses
-        for d in all_defenses:
-            writer.writerow([
-                d.frame_number, f"{d.timestamp:.2f}", d.fighter_id, "DEFENSE", d.action, "",
-                "", d.confidence, "", d.supporting_features
-            ])
-            
-    print(f"\n[DONE] Wrote {len(all_strikes)} strikes and {len(all_defenses)} defense events to {out_csv}")
+    print(f"\n[DONE] Wrote {len(all_strikes)} strikes and {len(all_defenses)} defense events to {rm.output_dir}")
 
 if __name__ == "__main__":
     main()

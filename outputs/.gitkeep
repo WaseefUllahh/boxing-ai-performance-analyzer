@@ -1,2 +1,6 @@
-# This file intentionally left empty.
-# Git does not track empty directories; this file ensures outputs/ is committed.
+# Ignore everything in this directory
+*
+# Except this file
+!.gitkeep
+# Except the generated analysis directories
+!analysis_*/

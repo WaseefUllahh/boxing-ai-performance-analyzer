@@ -26,6 +26,7 @@ from src.strike_detector import StrikeDetector
 from src.defense_detector import DefenseAndOutcomeDetector
 from src.movement_analyzer import MovementAnalyzer
 from src.fight_analyzer import FightAnalyzer
+from src.result_manager import ResultManager
 
 def main():
     print("=" * 60)
@@ -105,9 +106,11 @@ def main():
     )
     
     print("\nExporting files...")
-    aggregator.export(stats, CFG.OUTPUT_DIR)
+    rm = ResultManager(video_path.name)
+    rm.set_video_metadata(meta.width, meta.height, meta.fps, max_frames)
+    rm.export_results(stats, all_strikes, all_defenses, final_movement)
     
-    print(f"[DONE] Outputs saved to {CFG.OUTPUT_DIR}")
+    print(f"[DONE] Outputs saved to {rm.output_dir}")
     print("\nPreview of JSON output:")
     print(json.dumps(stats, indent=2))
 

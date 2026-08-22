@@ -16,19 +16,20 @@ from config import CFG
 CFG.DEBUG_STRIKES = False
 
 from src.video_processor import VideoProcessor
+from src.result_manager import ResultManager
 
 def main():
     video_path = CFG.VIDEO_PATH
-    output_path = CFG.OUTPUT_DIR / "boxing_analysis.mp4"
     
     print("=" * 60)
     print("  Testing Video Renderer")
     print("=" * 60)
     
-    processor = VideoProcessor(output_path)
+    rm = ResultManager(video_path.name)
+    processor = VideoProcessor(rm)
     
-    # Process 500 frames for a solid test video without waiting 15 mins
-    processor.process_video(video_path, max_frames=500)
+    # Process 10 frames for a quick directory/file creation test
+    processor.process_video(video_path, max_frames=10)
 
 if __name__ == "__main__":
     main()
