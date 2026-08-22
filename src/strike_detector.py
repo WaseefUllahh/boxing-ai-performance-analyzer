@@ -144,19 +144,23 @@ class StrikeDetector:
     # Private helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _velocity(history: deque[tuple[float, float]]) -> float:
+    def _velocity(history: deque[tuple[float, float] | None]) -> float:
         """Mean pixel velocity over the last two valid positions."""
-        valid = [(x, y) for x, y in history if (x, y) != (0.0, 0.0)]
+        valid = [p for p in history if p is not None]
         if len(valid) < 2:
             return 0.0
         p1, p2 = valid[-2], valid[-1]
-        return float(np.hypot(p2[0] - p1[0], p2[1] - p1[1]))
+        
+        # We can import pose_features if we want, but np.hypot is fine
+        from src.pose_features import distance
+        dist = distance(p1, p2)
+        return dist if dist is not None else 0.0
 
     @staticmethod
     def _classify(
         arm: str,
         features: PoseFeatures,
-        history: deque[tuple[float, float]],
+        history: deque[tuple[float, float] | None],
         velocity: float,
     ) -> tuple[str, float]:
         """
@@ -164,26 +168,27 @@ class StrikeDetector:
 
         Returns (label, confidence_score).
         """
-        valid = [(x, y) for x, y in history if (x, y) != (0.0, 0.0)]
+        valid = [p for p in history if p is not None]
         if len(valid) < 2:
             return ("JAB" if arm == "left" else "CROSS", 0.5)
 
-        p_prev, p_curr = np.array(valid[-2]), np.array(valid[-1])
-        delta = p_curr - p_prev
-        dx, dy = float(delta[0]), float(delta[1])
+        p_prev, p_curr = valid[-2], valid[-1]
+        dx = p_curr[0] - p_prev[0]
+        dy = p_curr[1] - p_prev[1]
 
         # Wrist height relative to shoulder
         if arm == "left":
-            wrist_y = features.left_wrist_xy[1]
+            wrist_y = features.left_wrist[1] if features.left_wrist else 0.0
             ext = features.left_arm_extension
         else:
-            wrist_y = features.right_wrist_xy[1]
+            wrist_y = features.right_wrist[1] if features.right_wrist else 0.0
             ext = features.right_arm_extension
 
-        shoulder_y = features.head_xy[1] + features.shoulder_width  # approx shoulder Y
+        shoulder_y = features.head_center[1] + (features.shoulder_width or 0.0) if features.head_center else 0.0
 
         # Uppercut: wrist moving upward significantly
-        if dy < -0.5 * features.shoulder_width and wrist_y < shoulder_y:
+        sw = features.shoulder_width or 1.0
+        if dy < -0.5 * sw and wrist_y < shoulder_y:
             return ("UPPERCUT", min(1.0, ext))
 
         # Hook: large horizontal component, wrist not fully extended forward
@@ -191,7 +196,7 @@ class StrikeDetector:
             return ("HOOK", min(1.0, ext))
 
         # Jab = lead hand (left for orthodox), Cross = rear hand
-        # Without stance information we use arm label as proxy
         if arm == "left":
             return ("JAB", min(1.0, ext))
         return ("CROSS", min(1.0, ext))
+

@@ -1,63 +1,103 @@
 """
-src/pose_features.py — Keypoint → numerical feature extraction.
+src/pose_features.py — Keypoint → numerical feature extraction and Geometry layer.
 
 Responsibilities
 ----------------
-- Convert raw (17, 3) COCO keypoint arrays into named, interpretable
-  features that the strike and defense detectors can reason about.
-- All computation is pure NumPy; no I/O, no model calls.
-
-Outputs  (PoseFeatures dataclass)
-----------------------------------
-- wrist velocities (left / right)
-- arm extension ratios (left / right)
-- shoulder width (normalisation reference)
-- head position
-- hip centre position
-- torso lean angle
-- guard flags (wrists near head)
-- stance width (ankle distance)
+- Provide robust geometric primitives that handle missing data (`None`) gracefully.
+- Convert raw (17, 3) COCO keypoint arrays into named, interpretable features.
+- Calculate joint centers, body orientations, arm extensions, and normalization scales.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
+from typing import Optional, Tuple
 
 import numpy as np
 
-# Import keypoint index map from config (no circular deps — config is pure data)
 from config import CFG
+
+# ---------------------------------------------------------------------------
+# Types
+# ---------------------------------------------------------------------------
+Point = Tuple[float, float]
+Vector = Tuple[float, float]
 
 KP = CFG.KP
 MIN_CONF = CFG.KP_CONFIDENCE_THRESHOLD
 
-
 # ---------------------------------------------------------------------------
-# Helper
+# Geometry Functions
 # ---------------------------------------------------------------------------
 
-def _kp(keypoints: np.ndarray, name: str) -> tuple[float, float, float]:
-    """
-    Return (x, y, confidence) for a named keypoint.
+def distance(p1: Optional[Point], p2: Optional[Point]) -> Optional[float]:
+    """Euclidean distance between two points."""
+    if p1 is None or p2 is None:
+        return None
+    return float(math.hypot(p1[0] - p2[0], p1[1] - p2[1]))
 
-    Returns (0, 0, 0) when confidence is below threshold or the index is out
-    of range — so callers should always check the confidence field.
-    """
+def vector(p1: Optional[Point], p2: Optional[Point]) -> Optional[Vector]:
+    """Vector pointing from p1 to p2."""
+    if p1 is None or p2 is None:
+        return None
+    return (float(p2[0] - p1[0]), float(p2[1] - p1[1]))
+
+def magnitude(v: Optional[Vector]) -> Optional[float]:
+    """Magnitude (length) of a vector."""
+    if v is None:
+        return None
+    return float(math.hypot(v[0], v[1]))
+
+def normalize(v: Optional[Vector]) -> Optional[Vector]:
+    """Return a unit vector. Returns None if length is zero."""
+    if v is None:
+        return None
+    mag = magnitude(v)
+    if mag is None or mag == 0.0:
+        return None
+    return (v[0] / mag, v[1] / mag)
+
+def angle_between_vectors(v1: Optional[Vector], v2: Optional[Vector]) -> Optional[float]:
+    """Returns the smallest angle between two vectors in degrees [0, 180]."""
+    v1_n = normalize(v1)
+    v2_n = normalize(v2)
+    if v1_n is None or v2_n is None:
+        return None
+    dot = v1_n[0] * v2_n[0] + v1_n[1] * v2_n[1]
+    dot = max(-1.0, min(1.0, dot))
+    return float(math.degrees(math.acos(dot)))
+
+def angle_between_points(p1: Optional[Point], p2: Optional[Point], p3: Optional[Point]) -> Optional[float]:
+    """Angle at p2 formed by p1-p2-p3 in degrees [0, 180]."""
+    v1 = vector(p2, p1)
+    v2 = vector(p2, p3)
+    return angle_between_vectors(v1, v2)
+
+def velocity(p_prev: Optional[Point], p_curr: Optional[Point]) -> Optional[Vector]:
+    """Velocity vector assuming 1 frame timestep (pixels/frame)."""
+    return vector(p_prev, p_curr)
+
+def acceleration(v_prev: Optional[Vector], v_curr: Optional[Vector]) -> Optional[Vector]:
+    """Acceleration vector assuming 1 frame timestep (pixels/frame^2)."""
+    return vector(v_prev, v_curr)
+
+def midpoint(p1: Optional[Point], p2: Optional[Point]) -> Optional[Point]:
+    """Midpoint between two points. If one is None, returns the other."""
+    if p1 is None and p2 is None: return None
+    if p1 is None: return p2
+    if p2 is None: return p1
+    return ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0)
+
+def _kp(keypoints: np.ndarray, name: str) -> Optional[Point]:
+    """Extract a named keypoint from the YOLO pose array if confidence is sufficient."""
     idx = KP.get(name)
     if idx is None or idx >= len(keypoints):
-        return (0.0, 0.0, 0.0)
-    x, y, c = float(keypoints[idx, 0]), float(keypoints[idx, 1]), float(keypoints[idx, 2])
+        return None
+    x, y, c = keypoints[idx]
     if c < MIN_CONF:
-        return (0.0, 0.0, 0.0)
-    return (x, y, c)
-
-
-def _dist(p1: tuple[float, float, float], p2: tuple[float, float, float]) -> float:
-    """Euclidean distance between two (x, y, _) tuples.  Returns 0 if either is invalid."""
-    if p1[2] == 0.0 or p2[2] == 0.0:
-        return 0.0
-    return float(np.hypot(p1[0] - p2[0], p1[1] - p2[1]))
-
+        return None
+    return (float(x), float(y))
 
 # ---------------------------------------------------------------------------
 # Dataclass
@@ -65,186 +105,170 @@ def _dist(p1: tuple[float, float, float], p2: tuple[float, float, float]) -> flo
 
 @dataclass
 class PoseFeatures:
-    """All derived features for a single fighter in a single frame."""
-
+    """All derived features and geometric points for a single fighter in a single frame."""
     track_id: int = -1
-
-    # ── Arm extension ratios (wrist-to-shoulder / forearm length) ─────────
-    # 0 = fully bent, 1 = fully extended.  >1 is possible (arm fully out).
-    left_arm_extension: float = 0.0
-    right_arm_extension: float = 0.0
-
-    # ── Wrist positions (absolute pixels) ────────────────────────────────
-    left_wrist_xy: tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-    right_wrist_xy: tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-
-    # ── Head position ─────────────────────────────────────────────────────
-    head_xy: tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-
-    # ── Hip centre ───────────────────────────────────────────────────────
-    hip_centre_xy: tuple[float, float] = field(default_factory=lambda: (0.0, 0.0))
-
-    # ── Shoulder width (pixels) — used as a normalisation scale ──────────
-    shoulder_width: float = 1.0          # never 0 (guarded below)
-
-    # ── Torso lean (degrees; positive = leaning right in image coords) ────
-    torso_lean_deg: float = 0.0
-
-    # ── Guard detection: is wrist close to head? ──────────────────────────
-    left_guard: bool = False
-    right_guard: bool = False
-
-    # ── Stance width (ankle separation, normalised by shoulder width) ─────
-    stance_width_norm: float = 0.0
-
-    # ── Hip height normalised (fraction of frame height; set externally) ──
-    hip_height_norm: float = 0.0
-
-    # ── Raw validity — False means too many keypoints were missing ────────
     valid: bool = True
 
+    # ── Basic Body Points ───────────────────────────────────────────────
+    head_center: Optional[Point] = None
+    shoulder_center: Optional[Point] = None
+    hip_center: Optional[Point] = None
+    body_center: Optional[Point] = None
+    bbox_center: Optional[Point] = None
+
+    left_wrist: Optional[Point] = None
+    right_wrist: Optional[Point] = None
+    left_elbow: Optional[Point] = None
+    right_elbow: Optional[Point] = None
+    left_knee: Optional[Point] = None
+    right_knee: Optional[Point] = None
+    left_ankle: Optional[Point] = None
+    right_ankle: Optional[Point] = None
+
+    # ── Derived Dimensions ──────────────────────────────────────────────
+    shoulder_width: Optional[float] = None
+    hip_width: Optional[float] = None
+    body_orientation: Optional[float] = None   # angle from vertical (degrees)
+    
+    # ── Action specific features ─────────────────────────────────────────
+    left_arm_extension: float = 0.0
+    right_arm_extension: float = 0.0
+    torso_lean_deg: float = 0.0
+    left_guard: bool = False
+    right_guard: bool = False
+    stance_width_norm: float = 0.0
+    hip_height_norm: float = 0.0
+    
+    # Keeping old properties pointing to new fields for backward-compatibility conceptually
+    @property
+    def left_wrist_xy(self) -> Optional[Point]: return self.left_wrist
+    
+    @property
+    def right_wrist_xy(self) -> Optional[Point]: return self.right_wrist
+
+    @property
+    def head_xy(self) -> Optional[Point]: return self.head_center
+    
+    @property
+    def hip_centre_xy(self) -> Optional[Point]: return self.hip_center
 
 # ---------------------------------------------------------------------------
 # Extractor
 # ---------------------------------------------------------------------------
 
 class PoseFeatureExtractor:
-    """
-    Converts a raw (17, 3) YOLO keypoint array into a PoseFeatures instance.
-
-    Frame height is needed to normalise vertical positions.
-    """
-
+    
     def extract(
         self,
         keypoints: np.ndarray,
         track_id: int,
         frame_height: int,
+        bbox_center: Optional[Point] = None,
         guard_wrist_head_ratio: float = 0.60,
     ) -> PoseFeatures:
-        """
-        Parameters
-        ----------
-        keypoints : np.ndarray, shape (17, 3)
-            COCO keypoints [x, y, confidence].
-        track_id : int
-            Fighter identity.
-        frame_height : int
-            Height of the video frame in pixels (for normalisation).
-        guard_wrist_head_ratio : float
-            Fraction of shoulder width below which a wrist is "near" the head.
-
-        Returns
-        -------
-        PoseFeatures
-        """
+        
         feats = PoseFeatures(track_id=track_id)
+        feats.bbox_center = bbox_center
 
-        # ── Named keypoints ───────────────────────────────────────────────
+        # ── Raw Points ──────────────────────────────────────────────────
         nose         = _kp(keypoints, "nose")
+        l_ear        = _kp(keypoints, "left_ear")
+        r_ear        = _kp(keypoints, "right_ear")
         l_shoulder   = _kp(keypoints, "left_shoulder")
         r_shoulder   = _kp(keypoints, "right_shoulder")
-        l_elbow      = _kp(keypoints, "left_elbow")
-        r_elbow      = _kp(keypoints, "right_elbow")
-        l_wrist      = _kp(keypoints, "left_wrist")
-        r_wrist      = _kp(keypoints, "right_wrist")
+        feats.left_elbow   = _kp(keypoints, "left_elbow")
+        feats.right_elbow  = _kp(keypoints, "right_elbow")
+        feats.left_wrist   = _kp(keypoints, "left_wrist")
+        feats.right_wrist  = _kp(keypoints, "right_wrist")
         l_hip        = _kp(keypoints, "left_hip")
         r_hip        = _kp(keypoints, "right_hip")
-        l_ankle      = _kp(keypoints, "left_ankle")
-        r_ankle      = _kp(keypoints, "right_ankle")
+        feats.left_knee    = _kp(keypoints, "left_knee")
+        feats.right_knee   = _kp(keypoints, "right_knee")
+        feats.left_ankle   = _kp(keypoints, "left_ankle")
+        feats.right_ankle  = _kp(keypoints, "right_ankle")
 
-        # Require at minimum both shoulders to produce meaningful features
-        if l_shoulder[2] == 0.0 and r_shoulder[2] == 0.0:
+        # Require at minimum both shoulders to consider pose remotely valid
+        if l_shoulder is None and r_shoulder is None:
             feats.valid = False
             return feats
 
-        # ── Shoulder width ────────────────────────────────────────────────
-        sw = _dist(l_shoulder, r_shoulder)
-        feats.shoulder_width = max(sw, 1.0)   # guard against division by zero
-
-        # ── Arm extension ratios ──────────────────────────────────────────
-        # Upper arm = shoulder → elbow; forearm = elbow → wrist
-        # Extension = (shoulder-to-wrist) / (upper-arm + forearm)
-        feats.left_arm_extension = self._arm_extension(l_shoulder, l_elbow, l_wrist)
-        feats.right_arm_extension = self._arm_extension(r_shoulder, r_elbow, r_wrist)
-
-        # ── Wrist positions ───────────────────────────────────────────────
-        feats.left_wrist_xy  = (l_wrist[0], l_wrist[1]) if l_wrist[2] > 0 else (0.0, 0.0)
-        feats.right_wrist_xy = (r_wrist[0], r_wrist[1]) if r_wrist[2] > 0 else (0.0, 0.0)
-
-        # ── Head position (use nose; fall back to ear midpoint) ───────────
-        if nose[2] > 0:
-            feats.head_xy = (nose[0], nose[1])
+        # ── Centers ──────────────────────────────────────────────────────
+        feats.head_center = nose if nose is not None else midpoint(l_ear, r_ear)
+        feats.shoulder_center = midpoint(l_shoulder, r_shoulder)
+        feats.hip_center = midpoint(l_hip, r_hip)
+        
+        if feats.shoulder_center is not None and feats.hip_center is not None:
+            feats.body_center = midpoint(feats.shoulder_center, feats.hip_center)
         else:
-            l_ear = _kp(keypoints, "left_ear")
-            r_ear = _kp(keypoints, "right_ear")
-            if l_ear[2] > 0 and r_ear[2] > 0:
-                feats.head_xy = ((l_ear[0] + r_ear[0]) / 2, (l_ear[1] + r_ear[1]) / 2)
+            feats.body_center = None
+        
+        feats.shoulder_width = distance(l_shoulder, r_shoulder)
+        if feats.shoulder_width == 0.0:
+            feats.shoulder_width = None
+            
+        feats.hip_width = distance(l_hip, r_hip)
 
-        # ── Hip centre ────────────────────────────────────────────────────
-        if l_hip[2] > 0 and r_hip[2] > 0:
-            feats.hip_centre_xy = ((l_hip[0] + r_hip[0]) / 2, (l_hip[1] + r_hip[1]) / 2)
-        elif l_hip[2] > 0:
-            feats.hip_centre_xy = (l_hip[0], l_hip[1])
-        elif r_hip[2] > 0:
-            feats.hip_centre_xy = (r_hip[0], r_hip[1])
+        # ── Arm Extension ───────────────────────────────────────────────
+        feats.left_arm_extension = self._arm_extension(l_shoulder, feats.left_elbow, feats.left_wrist)
+        feats.right_arm_extension = self._arm_extension(r_shoulder, feats.right_elbow, feats.right_wrist)
 
-        # ── Hip height normalised ─────────────────────────────────────────
-        hip_y = feats.hip_centre_xy[1]
-        feats.hip_height_norm = hip_y / max(frame_height, 1)
+        # ── Torso lean / Body orientation ───────────────────────────────
+        if feats.shoulder_center is not None and feats.hip_center is not None:
+            dx = feats.hip_center[0] - feats.shoulder_center[0]
+            dy = feats.hip_center[1] - feats.shoulder_center[1]
+            # Torso lean: angle from vertical (y-axis)
+            feats.torso_lean_deg = float(math.degrees(math.atan2(dx, dy)))
+            feats.body_orientation = feats.torso_lean_deg
 
-        # ── Torso lean (angle of shoulder midpoint → hip midpoint vector) ─
-        if (l_shoulder[2] > 0 and r_shoulder[2] > 0 and
-                feats.hip_centre_xy != (0.0, 0.0)):
-            shoulder_mid_x = (l_shoulder[0] + r_shoulder[0]) / 2
-            shoulder_mid_y = (l_shoulder[1] + r_shoulder[1]) / 2
-            dx = feats.hip_centre_xy[0] - shoulder_mid_x
-            dy = feats.hip_centre_xy[1] - shoulder_mid_y
-            feats.torso_lean_deg = float(np.degrees(np.arctan2(dx, dy)))
+        # ── Hip height normalised ───────────────────────────────────────
+        if feats.hip_center is not None:
+            feats.hip_height_norm = feats.hip_center[1] / max(frame_height, 1)
 
-        # ── Guard detection ───────────────────────────────────────────────
-        guard_dist = guard_wrist_head_ratio * feats.shoulder_width
-        if feats.head_xy != (0.0, 0.0):
-            if l_wrist[2] > 0:
-                d = np.hypot(l_wrist[0] - feats.head_xy[0],
-                             l_wrist[1] - feats.head_xy[1])
-                feats.left_guard = bool(d < guard_dist)
-            if r_wrist[2] > 0:
-                d = np.hypot(r_wrist[0] - feats.head_xy[0],
-                             r_wrist[1] - feats.head_xy[1])
-                feats.right_guard = bool(d < guard_dist)
+        # ── Guard detection ─────────────────────────────────────────────
+        if feats.head_center is not None and feats.shoulder_width is not None:
+            guard_dist = guard_wrist_head_ratio * feats.shoulder_width
+            
+            d_l = distance(feats.left_wrist, feats.head_center)
+            if d_l is not None:
+                feats.left_guard = bool(d_l < guard_dist)
+                
+            d_r = distance(feats.right_wrist, feats.head_center)
+            if d_r is not None:
+                feats.right_guard = bool(d_r < guard_dist)
 
-        # ── Stance width (normalised by shoulder width) ───────────────────
-        if l_ankle[2] > 0 and r_ankle[2] > 0:
-            ankle_dist = np.hypot(l_ankle[0] - r_ankle[0], l_ankle[1] - r_ankle[1])
-            feats.stance_width_norm = ankle_dist / feats.shoulder_width
+        # ── Stance width ────────────────────────────────────────────────
+        if feats.shoulder_width is not None and feats.shoulder_width > 0:
+            ankle_dist = distance(feats.left_ankle, feats.right_ankle)
+            if ankle_dist is not None:
+                feats.stance_width_norm = ankle_dist / feats.shoulder_width
 
         return feats
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
     @staticmethod
     def _arm_extension(
-        shoulder: tuple[float, float, float],
-        elbow:    tuple[float, float, float],
-        wrist:    tuple[float, float, float],
+        shoulder: Optional[Point],
+        elbow:    Optional[Point],
+        wrist:    Optional[Point],
     ) -> float:
-        """
-        Compute arm extension ratio in [0, ∞).
-
-        0   = fully bent / keypoints missing
-        ~1  = fully extended
-        """
-        if shoulder[2] == 0.0 or wrist[2] == 0.0:
+        if shoulder is None or wrist is None:
             return 0.0
-        shoulder_wrist = np.hypot(shoulder[0] - wrist[0], shoulder[1] - wrist[1])
-        if elbow[2] > 0:
-            upper = np.hypot(shoulder[0] - elbow[0], shoulder[1] - elbow[1])
-            fore  = np.hypot(elbow[0]   - wrist[0],  elbow[1]   - wrist[1])
-            total = upper + fore
+        
+        shoulder_wrist = distance(shoulder, wrist)
+        if shoulder_wrist is None:
+            return 0.0
+            
+        if elbow is not None:
+            upper = distance(shoulder, elbow)
+            fore = distance(elbow, wrist)
+            if upper is not None and fore is not None:
+                total = upper + fore
+            else:
+                total = shoulder_wrist
         else:
-            # Elbow not visible — approximate total arm length from shoulder width
-            # (typical human arm ≈ 1.5× shoulder width)
-            total = np.hypot(shoulder[0] - wrist[0], shoulder[1] - wrist[1])
-        return float(shoulder_wrist / max(total, 1.0))
+            # Fallback estimation
+            total = shoulder_wrist
+            
+        if total == 0.0:
+            return 0.0
+            
+        return float(shoulder_wrist / total)

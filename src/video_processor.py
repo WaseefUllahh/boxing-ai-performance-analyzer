@@ -197,8 +197,12 @@ class VideoProcessor:
         for fighter in tracked:
             tid = fighter["track_id"]
             kps = fighter["keypoints"]
-
-            feat    = self._feat_extractor.extract(kps, tid, frame_height)
+            feat = self._feat_extractor.extract(
+                keypoints=kps,
+                track_id=tid,
+                frame_height=frame_height,
+                bbox_center=fighter["center"]
+            )
             strike  = self._strike_det.detect(feat)
             defense = self._defense_det.detect(feat)
 
