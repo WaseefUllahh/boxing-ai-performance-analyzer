@@ -14,6 +14,7 @@ from __future__ import annotations
 import sys
 import io
 from pathlib import Path
+import plotly
 
 # ── Force UTF-8 stdout on Windows (Python 3.7+) ───────────────────────────
 try:
