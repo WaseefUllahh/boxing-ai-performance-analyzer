@@ -1,22 +1,44 @@
-# ─────────────────────────────────────────────
-#  Boxing AI Performance Analyzer — Dependencies
-# ─────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────
+#  Boxing AI Performance Analyzer — Pinned Dependencies
+#
+#  Verified environment:
+#    Python  : 3.13.4  (Windows, MSC v.1943 64-bit)
+#    Platform: win32
+#
+#  Install:
+#    pip install -r requirements.txt
+#
+#  NOTE: torch/torchvision are NOT listed here because they are already
+#  present in the environment (torch 2.7.1).  Ultralytics works with any
+#  torch >=1.8.  Adding torch here would cause pip to upgrade it needlessly.
+# ────────────────────────────────────────────────────────────────────────────
 
-# Computer vision & deep learning
-ultralytics>=8.2.0          # YOLOv8/v11 Pose + BoT-SORT tracker
-opencv-python>=4.9.0        # Frame I/O, drawing, video writing
+# ── Computer vision & deep learning ─────────────────────────────────────────
+# Pin to 8.3.x to stay on the torch 2.7.x ABI (avoids large torch upgrade)
+ultralytics==8.3.145
 
-# Numerical / data
-numpy>=1.26.0
+# Required by ultralytics (installed separately to avoid torch upgrade)
+torchvision==0.22.1         # must match torch 2.7.x ABI
+ultralytics-thop>=2.0.0    # FLOPs counter used by ultralytics
+py-cpuinfo>=9.0.0           # CPU info for device reporting
+
+# opencv-python 4.13.0.90 has a known regression — exclude it explicitly
+opencv-python>=4.9.0,!=4.13.0.90
+
+# ── Numerical / data ─────────────────────────────────────────────────────────
+numpy>=1.26.0,<3.0          # numpy 2.x is fine; upper bound guards future breaks
 pandas>=2.2.0
+matplotlib>=3.7.0           # required by ultralytics for plotting utils
 
-# Dashboard
+# ── Dashboard ────────────────────────────────────────────────────────────────
 streamlit>=1.35.0
 plotly>=5.22.0              # Interactive charts in the dashboard
 
-# Utilities
+# ── Utilities ────────────────────────────────────────────────────────────────
 tqdm>=4.66.0                # Progress bars for CLI pipeline
 Pillow>=10.3.0              # Image helpers used by Ultralytics
+pyyaml>=5.3.1               # Tracker config files (botsort.yaml etc.)
 
-# Optional (improves Ultralytics speed — comment out if install fails)
-# lap>=0.4.0                # Fast linear assignment (BoT-SORT dep)
+# ── Optional — uncomment if BoT-SORT assignment speed matters ────────────────
+# lapx>=0.5.5               # Drop-in lap replacement that supports Python 3.12+
+

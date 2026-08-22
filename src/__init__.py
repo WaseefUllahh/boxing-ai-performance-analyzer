@@ -7,6 +7,7 @@ Import sub-modules explicitly to avoid circular imports.
 
 __version__ = "0.1.0"
 __all__ = [
+    "video_io",
     "detector",
     "tracker",
     "pose_features",
@@ -15,3 +16,4 @@ __all__ = [
     "fight_analyzer",
     "video_processor",
 ]
+

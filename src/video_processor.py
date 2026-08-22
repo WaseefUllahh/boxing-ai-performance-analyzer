@@ -3,7 +3,7 @@ src/video_processor.py — Orchestrates the full frame-by-frame pipeline.
 
 Pipeline (per frame)
 --------------------
-1. Read frame from cv2.VideoCapture
+1. VideoReader.frames()        → validated, streaming frame iterator
 2. FighterTracker.update()     → tracked fighters + keypoints
 3. PoseFeatureExtractor.extract()  → PoseFeatures per fighter
 4. StrikeDetector.detect()     → StrikeResult per fighter
@@ -28,6 +28,7 @@ import numpy as np
 from tqdm import tqdm
 
 from config import CFG
+from src.video_io import VideoReader, print_video_info
 from src.tracker import FighterTracker
 from src.pose_features import PoseFeatureExtractor
 from src.strike_detector import StrikeDetector
@@ -107,53 +108,67 @@ class VideoProcessor:
 
     # ------------------------------------------------------------------
     def run(self) -> None:
-        """Execute the full pipeline on the configured video."""
-        cap = cv2.VideoCapture(str(self.video_path))
-        if not cap.isOpened():
-            raise IOError(f"Cannot open video: {self.video_path}")
+        """
+        Execute the full pipeline on the configured video.
 
-        # ── Video properties ──────────────────────────────────────────────
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        src_fps      = cap.get(cv2.CAP_PROP_FPS) or CFG.OUTPUT_VIDEO_FPS
-        width        = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height       = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        out_fps      = CFG.OUTPUT_VIDEO_FPS if CFG.OUTPUT_VIDEO_FPS > 0 else src_fps
+        Video I/O is fully delegated to VideoReader which:
+        - validates file existence and codec compatibility
+        - streams frames one-at-a-time (no full-video RAM load)
+        - handles corrupted/dropped frames gracefully
+        - guarantees VideoCapture.release() via context manager
+        """
+        # ── Open + validate video (raises VideoIOError on failure) ────────
+        with VideoReader(self.video_path) as reader:
+            meta = reader.meta
 
-        print(f"[VideoProcessor] {self.video_path.name}  "
-              f"{width}×{height}  {src_fps:.1f} fps  {total_frames} frames")
+            # Print validated metadata
+            print_video_info(self.video_path)
 
-        # ── Output video writer ────────────────────────────────────────────
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        out_path = self.output_dir / f"annotated_{self.video_path.stem}.mp4"
-        fourcc = cv2.VideoWriter_fourcc(*CFG.OUTPUT_VIDEO_CODEC)
-        writer = cv2.VideoWriter(str(out_path), fourcc, out_fps, (width, height))
+            out_fps = CFG.OUTPUT_VIDEO_FPS if CFG.OUTPUT_VIDEO_FPS > 0 else meta.fps
 
-        # ── Main loop ─────────────────────────────────────────────────────
-        frame_idx = 0
-        try:
-            with tqdm(total=total_frames, desc="Processing", unit="frame") as pbar:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
+            # ── Output video writer ───────────────────────────────────────
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            out_path = self.output_dir / f"annotated_{self.video_path.stem}.mp4"
+            fourcc = cv2.VideoWriter_fourcc(*CFG.OUTPUT_VIDEO_CODEC)
+            writer = cv2.VideoWriter(
+                str(out_path), fourcc, out_fps, (meta.width, meta.height)
+            )
 
-                    annotated = self._process_frame(frame, frame_idx, height)
-                    writer.write(annotated)
+            if not writer.isOpened():
+                raise IOError(
+                    f"Could not create output video writer at {out_path}\n"
+                    f"Codec '{CFG.OUTPUT_VIDEO_CODEC}' may not be available on this system."
+                )
 
-                    if self.show_display:
-                        cv2.imshow("Boxing Analyzer — press Q to quit", annotated)
-                        if cv2.waitKey(1) & 0xFF == ord("q"):
-                            print("\n[VideoProcessor] User quit early.")
-                            break
+            # ── Main loop — frame-by-frame streaming ──────────────────────
+            try:
+                with tqdm(
+                    total=meta.frame_count or None,
+                    desc="Processing",
+                    unit="frame",
+                    dynamic_ncols=True,
+                ) as pbar:
+                    for frame_idx, frame in reader.frames():
+                        annotated = self._process_frame(
+                            frame, frame_idx, meta.height
+                        )
+                        writer.write(annotated)
 
-                    frame_idx += 1
-                    pbar.update(1)
+                        if self.show_display:
+                            cv2.imshow(
+                                "Boxing Analyzer — press Q to quit", annotated
+                            )
+                            if cv2.waitKey(1) & 0xFF == ord("q"):
+                                print("\n[VideoProcessor] User quit early.")
+                                break
 
-        finally:
-            cap.release()
-            writer.release()
-            if self.show_display:
-                cv2.destroyAllWindows()
+                        pbar.update(1)
+
+            finally:
+                # VideoReader.__exit__ releases cap; release writer here
+                writer.release()
+                if self.show_display:
+                    cv2.destroyAllWindows()
 
         print(f"[VideoProcessor] Annotated video → {out_path}")
 
