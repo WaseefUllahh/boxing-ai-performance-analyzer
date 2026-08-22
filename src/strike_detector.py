@@ -18,24 +18,7 @@ from typing import Optional, List
 from config import CFG
 from src.pose_features import PoseFeatures, distance, magnitude
 from src.temporal_features import SmoothedFeatures
-
-# ---------------------------------------------------------------------------
-# Output Structures
-# ---------------------------------------------------------------------------
-
-@dataclass
-class StrikeEvent:
-    """A single discrete punch event."""
-    fighter_id: int
-    frame_number: int
-    timestamp: float
-    action: str              # "JAB", "CROSS", "HOOK", "UPPERCUT", "PUNCH"
-    hand: str                # "left", "right"
-    confidence: float        # heuristic score 0.0-1.0
-    wrist_position: Optional[tuple[float, float]]
-    opponent_distance: Optional[float]
-    target_zone_estimate: str # "HEAD", "BODY", "UNKNOWN"
-    event_type: str = "STRIKE"
+from src.events import FightEvent
 
 # ---------------------------------------------------------------------------
 # State Tracking
@@ -74,7 +57,7 @@ class StrikeDetector:
         opponent_smoothed: Optional[SmoothedFeatures],
         frame_idx: int,
         fps: float
-    ) -> List[StrikeEvent]:
+    ) -> List[FightEvent]:
         
         tid = features.track_id
         if tid not in self._states:
@@ -83,7 +66,7 @@ class StrikeDetector:
         state = self._states[tid]
         state.tick()
         
-        events: List[StrikeEvent] = []
+        events: List[FightEvent] = []
         
         if not features.valid:
             return events
@@ -152,7 +135,7 @@ class StrikeDetector:
         opponent_smoothed: Optional[SmoothedFeatures],
         frame_idx: int,
         timestamp: float
-    ) -> Optional[StrikeEvent]:
+    ) -> Optional[FightEvent]:
         
         # Get hand specific vectors
         if arm == "left":
@@ -217,14 +200,16 @@ class StrikeDetector:
             print(f"forward extension: {ext:.2f}")
             print(f"confidence: {conf:.2f}")
 
-        return StrikeEvent(
+        return FightEvent(
             fighter_id=features.track_id,
             frame_number=frame_idx,
             timestamp=timestamp,
+            category="STRIKE",
             action=action,
             hand=arm,
             confidence=round(conf, 2),
             wrist_position=wrist,
             opponent_distance=round(opp_dist, 1) if opp_dist else None,
-            target_zone_estimate=target
+            target_zone_estimate=target,
+            event_type="STRIKE"
         )

@@ -18,26 +18,16 @@ from typing import Optional, List, Dict
 from config import CFG
 from src.pose_features import PoseFeatures, distance, magnitude
 from src.temporal_features import SmoothedFeatures
-from src.strike_detector import StrikeEvent
+from src.events import FightEvent
 
 # ---------------------------------------------------------------------------
 # Output Structures
 # ---------------------------------------------------------------------------
 
 @dataclass
-class DefenseEvent:
-    """A defensive action or strike outcome event."""
-    fighter_id: int
-    frame_number: int
-    timestamp: float
-    action: str              # "BLOCK", "DODGE"
-    confidence: float
-    supporting_features: str
-
-@dataclass
 class _TrackedStrike:
     """Internal state to track a strike over a time window."""
-    event: StrikeEvent
+    event: FightEvent
     frames_remaining: int
     min_target_distance: float
     was_blocked: bool
@@ -65,23 +55,21 @@ class DefenseAndOutcomeDetector:
 
     def update(
         self,
-        new_strikes: List[StrikeEvent],
+        new_strikes: List[FightEvent],
         all_features: Dict[int, PoseFeatures],
         all_smoothed: Dict[int, SmoothedFeatures],
         frame_idx: int,
         fps: float
-    ) -> tuple[List[StrikeEvent], List[DefenseEvent]]:
+    ) -> List[FightEvent]:
         """
         Ingests new strikes, updates tracking for existing strikes to find outcomes,
         and detects new defense events.
         
         Returns:
-            resolved_strikes: List of StrikeEvents that have just finished their outcome window.
-            defense_events: List of DefenseEvents detected in this frame.
+            resolved_events: List of FightEvents that include resolved strikes and new defenses.
         """
         
-        resolved_strikes: List[StrikeEvent] = []
-        defense_events: List[DefenseEvent] = []
+        resolved_events: List[FightEvent] = []
         timestamp = frame_idx / max(fps, 1.0)
         
         # Decrement cooldowns
@@ -177,7 +165,7 @@ class DefenseAndOutcomeDetector:
                     else:
                         ts.event.event_type = "POSSIBLE_MISSED"
                         
-                resolved_strikes.append(ts.event)
+                resolved_events.append(ts.event)
             else:
                 remaining_strikes.append(ts)
                 
@@ -196,10 +184,11 @@ class DefenseAndOutcomeDetector:
                 if smooth.head_velocity:
                     dx, dy = smooth.head_velocity
                     if abs(dx) >= self.dodge_velocity and abs(dx) > abs(dy):
-                        defense_events.append(DefenseEvent(
+                        resolved_events.append(FightEvent(
                             fighter_id=tid,
                             frame_number=frame_idx,
                             timestamp=timestamp,
+                            category="DEFENSE",
                             action="DODGE",
                             confidence=0.8,
                             supporting_features=f"head_dx: {dx:.1f}"
@@ -218,10 +207,11 @@ class DefenseAndOutcomeDetector:
                     
                     if d_lw is not None and d_rw is not None:
                         if d_lw <= guard_dist and d_rw <= guard_dist:
-                            defense_events.append(DefenseEvent(
+                            resolved_events.append(FightEvent(
                                 fighter_id=tid,
                                 frame_number=frame_idx,
                                 timestamp=timestamp,
+                                category="DEFENSE",
                                 action="BLOCK",
                                 confidence=0.9,
                                 supporting_features=f"High guard"
@@ -229,4 +219,4 @@ class DefenseAndOutcomeDetector:
                             # Longer cooldown for static block
                             self._block_cooldowns[tid] = int(CFG.STRIKE_COOLDOWN_FRAMES * 1.5)
                             
-        return resolved_strikes, defense_events
+        return resolved_events
