@@ -51,6 +51,9 @@ TRACKER: str = "botsort.yaml"
 # Detections beyond this count are ignored during analysis.
 MAX_FIGHTERS: int = 2
 
+# Assumed round duration in seconds (used for temporal chunking)
+ASSUMED_ROUND_DURATION: float = 180.0
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pose / keypoint indices  (COCO 17-keypoint convention)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -121,10 +124,22 @@ DUCK_HIP_DROP_RATIO: float = 0.15
 SLIP_LATERAL_RATIO: float = 0.20
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Temporal Analysis & Smoothing
+# Movement analysis & Stance
 # ─────────────────────────────────────────────────────────────────────────────
 # Minimum pixel displacement per frame to count as "movement"
 MOVEMENT_MIN_PIXELS: float = 3.0
+
+# Minimum velocity (projected towards opponent) to be considered "advancing"
+MOVEMENT_ADVANCE_VELOCITY: float = 4.0
+
+# Minimum velocity (projected away from opponent) to be considered "retreating"
+MOVEMENT_RETREAT_VELOCITY: float = -4.0
+
+# Window size (frames) for rolling stance consensus
+STANCE_CONFIDENCE_FRAMES: int = 30
+
+# Minimum difference in distance-to-opponent (normalized) to classify a stance
+STANCE_FOOT_DIST_RATIO: float = 0.1
 
 # Maximum number of frames to store in temporal histories
 HISTORY_LENGTH: int = 15
@@ -174,6 +189,7 @@ class _Config:
     IOU_THRESHOLD = IOU_THRESHOLD
     TRACKER = TRACKER
     MAX_FIGHTERS = MAX_FIGHTERS
+    ASSUMED_ROUND_DURATION = getattr(CFG, 'ASSUMED_ROUND_DURATION', 180.0) if 'CFG' in globals() else 180.0
     KP = KP
     KP_CONFIDENCE_THRESHOLD = KP_CONFIDENCE_THRESHOLD
     STRIKE_MIN_VELOCITY = STRIKE_MIN_VELOCITY
@@ -189,6 +205,10 @@ class _Config:
     DUCK_HIP_DROP_RATIO = DUCK_HIP_DROP_RATIO
     SLIP_LATERAL_RATIO = SLIP_LATERAL_RATIO
     MOVEMENT_MIN_PIXELS = MOVEMENT_MIN_PIXELS
+    MOVEMENT_ADVANCE_VELOCITY = getattr(CFG, 'MOVEMENT_ADVANCE_VELOCITY', 4.0) if 'CFG' in globals() else 4.0
+    MOVEMENT_RETREAT_VELOCITY = getattr(CFG, 'MOVEMENT_RETREAT_VELOCITY', -4.0) if 'CFG' in globals() else -4.0
+    STANCE_CONFIDENCE_FRAMES = getattr(CFG, 'STANCE_CONFIDENCE_FRAMES', 30) if 'CFG' in globals() else 30
+    STANCE_FOOT_DIST_RATIO = getattr(CFG, 'STANCE_FOOT_DIST_RATIO', 0.1) if 'CFG' in globals() else 0.1
     HISTORY_LENGTH = HISTORY_LENGTH
     TEMPORAL_SMOOTHING_FACTOR = TEMPORAL_SMOOTHING_FACTOR
     ACTION_COOLDOWN = ACTION_COOLDOWN
