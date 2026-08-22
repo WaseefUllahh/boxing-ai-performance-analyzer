@@ -19,8 +19,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 from config import CFG
-from src.strike_detector import StrikeEvent
-from src.defense_detector import DefenseEvent
+from src.events import FightEvent
 from src.movement_analyzer import MovementStats
 
 def _safe_div(a: float, b: float) -> float:
@@ -44,8 +43,7 @@ class FightAnalyzer:
 
     def aggregate(
         self,
-        strikes: List[StrikeEvent],
-        defenses: List[DefenseEvent],
+        events: List[FightEvent],
         final_movement: Dict[int, MovementStats],
         fps: float,
         total_frames: int
@@ -59,8 +57,7 @@ class FightAnalyzer:
         
         # Determine all unique fighter IDs across all sources
         fighter_ids = set(final_movement.keys())
-        for s in strikes: fighter_ids.add(s.fighter_id)
-        for d in defenses: fighter_ids.add(d.fighter_id)
+        for e in events: fighter_ids.add(e.fighter_id)
         
         # If no fighters, return empty shell
         if not fighter_ids:
@@ -106,39 +103,35 @@ class FightAnalyzer:
             "dodges": 0
         }))
         
-        # 2. Process Strikes
-        for s in strikes:
-            fid = s.fighter_id
+        # 2. Process Events
+        for e in events:
+            fid = e.fighter_id
             stats = fighter_stats[fid]
+            r_idx = int((e.frame_number / fps) // self.assumed_round_duration) + 1
             
-            stats["total_punches"] += 1
-            if s.action == "JAB": stats["jabs"] += 1
-            elif s.action == "CROSS": stats["crosses"] += 1
-            elif s.action == "HOOK": stats["hooks"] += 1
-            elif s.action == "UPPERCUT": stats["uppercuts"] += 1
-            
-            if s.event_type == "POSSIBLE_LANDED": stats["possible_landed"] += 1
-            elif s.event_type == "POSSIBLE_BLOCKED": stats["possible_blocked"] += 1
-            elif s.event_type == "POSSIBLE_MISSED": stats["possible_missed"] += 1
-            
-            # Round bucketing
-            r_idx = int((s.frame_number / fps) // self.assumed_round_duration) + 1
-            round_stats[r_idx][fid]["total_punches"] += 1
-            if s.event_type == "POSSIBLE_LANDED":
-                round_stats[r_idx][fid]["possible_landed"] += 1
-
-        # 3. Process Defenses
-        for d in defenses:
-            fid = d.fighter_id
-            stats = fighter_stats[fid]
-            
-            stats["defensive_movements"] += 1
-            if d.action == "BLOCK": stats["blocks"] += 1
-            elif d.action == "DODGE": stats["dodges"] += 1
-            
-            r_idx = int((d.frame_number / fps) // self.assumed_round_duration) + 1
-            if d.action == "BLOCK": round_stats[r_idx][fid]["blocks"] += 1
-            if d.action == "DODGE": round_stats[r_idx][fid]["dodges"] += 1
+            if e.category == "STRIKE":
+                stats["total_punches"] += 1
+                if e.action == "JAB": stats["jabs"] += 1
+                elif e.action == "CROSS": stats["crosses"] += 1
+                elif e.action == "HOOK": stats["hooks"] += 1
+                elif e.action == "UPPERCUT": stats["uppercuts"] += 1
+                
+                if e.event_type == "POSSIBLE_LANDED": stats["possible_landed"] += 1
+                elif e.event_type == "POSSIBLE_BLOCKED": stats["possible_blocked"] += 1
+                elif e.event_type == "POSSIBLE_MISSED": stats["possible_missed"] += 1
+                
+                # Round bucketing
+                round_stats[r_idx][fid]["total_punches"] += 1
+                if e.event_type == "POSSIBLE_LANDED":
+                    round_stats[r_idx][fid]["possible_landed"] += 1
+                    
+            elif e.category == "DEFENSE":
+                stats["defensive_movements"] += 1
+                if e.action == "BLOCK": stats["blocks"] += 1
+                elif e.action == "DODGE": stats["dodges"] += 1
+                
+                if e.action == "BLOCK": round_stats[r_idx][fid]["blocks"] += 1
+                if e.action == "DODGE": round_stats[r_idx][fid]["dodges"] += 1
             
         # 4. Process Movement & Calculate Derived Metrics
         for fid, stats in fighter_stats.items():
