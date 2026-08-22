@@ -11,13 +11,14 @@ Responsibilities
 
 from __future__ import annotations
 
-import math
+
 import collections
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Dict
 
 from config import CFG
-from src.pose_features import PoseFeatures, Point, Vector, distance, magnitude
+from src.pose_features import PoseFeatures, distance, magnitude
+from src.temporal_features import SmoothedFeatures
 
 @dataclass
 class MovementStats:
@@ -113,10 +114,9 @@ class MovementAnalyzer:
                     stat.total_center_movement += m
                     
             # Foot volume (average of left/right ankle velocity)
-            # We don't have explicit ankle velocity in SmoothedFeatures, but we can compute it if we want,
-            # or just use center velocity as proxy. Wait, we have left_ankle, right_ankle positions.
-            # I will approximate foot movement using center movement for now, as ankle tracking is notoriously jittery.
-            stat.total_foot_movement = stat.total_center_movement * 1.5 
+            # We don't have explicit ankle velocity in SmoothedFeatures, but since the center movement is the only metric we can reliably track in 2D space without jitter, we will just use center velocity for foot movement proxy.
+            # Using 1.5x was an impossible statistic. We will use the center movement directly.
+            stat.total_foot_movement = stat.total_center_movement 
             
         return self.stats
 

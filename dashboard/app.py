@@ -5,7 +5,6 @@ import pandas as pd
 from pathlib import Path
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 
 # Add the project root to sys.path so we can import src and config
 ROOT = Path(__file__).resolve().parent.parent
@@ -130,7 +129,7 @@ def main():
                     # Save the result path to session state so it persists on rerenders
                     st.session_state['result_dir'] = str(rm.output_dir)
                     
-                except Exception as e:
+                except (RuntimeError, ValueError, IOError) as e:
                     st.error(f"An error occurred during processing.")
                     st.error(str(e))
                 finally:

@@ -11,8 +11,7 @@ Responsibilities
 
 from __future__ import annotations
 
-import math
-from dataclasses import dataclass
+
 from typing import Optional, List
 
 from config import CFG
@@ -141,11 +140,9 @@ class StrikeDetector:
         if arm == "left":
             wrist = smoothed.left_wrist
             wrist_vel_vec = smoothed.left_wrist_velocity
-            shoulder = smoothed.left_shoulder if hasattr(smoothed, 'left_shoulder') else None
         else:
             wrist = smoothed.right_wrist
             wrist_vel_vec = smoothed.right_wrist_velocity
-            shoulder = smoothed.right_shoulder if hasattr(smoothed, 'right_shoulder') else None
             
         if not wrist or not wrist_vel_vec:
             return None

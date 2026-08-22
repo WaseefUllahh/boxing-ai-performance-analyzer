@@ -35,7 +35,6 @@ Usage
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Generator, Optional
@@ -374,7 +373,7 @@ class VideoReader:
             ]
             result = "".join(c for c in chars if c.isprintable())
             return result if result else f"0x{fourcc_int:08X}"
-        except Exception:
+        except (ValueError, IndexError):
             return "unknown"
 
 

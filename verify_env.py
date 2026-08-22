@@ -20,7 +20,8 @@ import plotly
 try:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
+except (AttributeError, OSError, ValueError):
+    # Fallback if stdout cannot be reconfigured
     pass
 
 ROOT = Path(__file__).resolve().parent
@@ -205,7 +206,7 @@ def _src_light():
     sys.path.insert(0, str(ROOT))
     from src.pose_features    import PoseFeatureExtractor, PoseFeatures
     from src.strike_detector  import StrikeDetector
-    from src.defense_detector import DefenseDetector
+    from src.defense_detector import DefenseAndOutcomeDetector
     from src.fight_analyzer   import FightAnalyzer
     return "pose_features, strike, defense, analyzer -- OK"
 check("src light modules (no YOLO dep)", _src_light)

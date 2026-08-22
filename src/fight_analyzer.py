@@ -12,11 +12,8 @@ Responsibilities
 from __future__ import annotations
 
 import math
-import json
-import csv
 from collections import defaultdict
-from typing import List, Dict, Any, Optional
-from pathlib import Path
+from typing import List, Dict, Any
 
 from config import CFG
 from src.events import FightEvent

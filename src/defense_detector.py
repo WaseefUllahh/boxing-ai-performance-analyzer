@@ -10,13 +10,12 @@ Responsibilities
 
 from __future__ import annotations
 
-import math
-import collections
+
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 
 from config import CFG
-from src.pose_features import PoseFeatures, distance, magnitude
+from src.pose_features import PoseFeatures, distance
 from src.temporal_features import SmoothedFeatures
 from src.events import FightEvent
 

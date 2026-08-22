@@ -12,7 +12,7 @@ Responsibilities
 from __future__ import annotations
 
 import collections
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Dict
 
 from config import CFG

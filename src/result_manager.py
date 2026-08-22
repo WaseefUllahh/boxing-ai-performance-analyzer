@@ -78,7 +78,7 @@ class ResultManager:
             path = self.output_dir / filename
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
-        except Exception as e:
+        except OSError as e:
             print(f"Failed to export {filename}: {e}")
 
     def _export_metadata(self):
@@ -96,7 +96,7 @@ class ResultManager:
                 if headers:
                     writer.writerow(headers)
                 writer.writerows(rows)
-        except Exception as e:
+        except OSError as e:
             print(f"Failed to export CSV {filename}: {e}")
 
     def _export_fight_stats_csv(self, data: Dict[str, Any]):
