@@ -130,9 +130,14 @@ class PoseFeatures:
     hip_width: Optional[float] = None
     body_orientation: Optional[float] = None   # angle from vertical (degrees)
     
-    # ── Action specific features ─────────────────────────────────────────
-    left_arm_extension: float = 0.0
-    right_arm_extension: float = 0.0
+    # ── Action specific features ─────────────────────────────────────
+    # Arm extension: None means elbow keypoint was unavailable — do NOT substitute
+    # with a numeric value, as that would artificially satisfy the strike threshold.
+    left_arm_extension: Optional[float] = None
+    right_arm_extension: Optional[float] = None
+    # Raw elbow keypoint confidence (0.0 – 1.0); used in strike confidence formula
+    left_elbow_conf: float = 0.0
+    right_elbow_conf: float = 0.0
     torso_lean_deg: float = 0.0
     left_guard: bool = False
     right_guard: bool = False
@@ -208,8 +213,14 @@ class PoseFeatureExtractor:
             
         feats.hip_width = distance(l_hip, r_hip)
 
-        # ── Arm Extension ───────────────────────────────────────────────
-        feats.left_arm_extension = self._arm_extension(l_shoulder, feats.left_elbow, feats.left_wrist)
+        # ── Arm Extension ───────────────────────────────────────
+        # Store raw elbow confidence BEFORE the _kp() confidence gate strips it
+        l_elbow_idx = KP.get("left_elbow")
+        r_elbow_idx = KP.get("right_elbow")
+        feats.left_elbow_conf  = float(keypoints[l_elbow_idx][2]) if l_elbow_idx is not None and l_elbow_idx < len(keypoints) else 0.0
+        feats.right_elbow_conf = float(keypoints[r_elbow_idx][2]) if r_elbow_idx is not None and r_elbow_idx < len(keypoints) else 0.0
+
+        feats.left_arm_extension  = self._arm_extension(l_shoulder, feats.left_elbow,  feats.left_wrist)
         feats.right_arm_extension = self._arm_extension(r_shoulder, feats.right_elbow, feats.right_wrist)
 
         # ── Torso lean / Body orientation ───────────────────────────────
@@ -249,26 +260,30 @@ class PoseFeatureExtractor:
         shoulder: Optional[Point],
         elbow:    Optional[Point],
         wrist:    Optional[Point],
-    ) -> float:
-        if shoulder is None or wrist is None:
-            return 0.0
-        
+    ) -> Optional[float]:
+        """
+        Return the arm extension ratio [0, 1]: straight-line shoulder→wrist distance
+        divided by the sum of the two bone lengths shoulder→elbow and elbow→wrist.
+
+        Returns None (not 0.0) when any required keypoint is missing.  Callers
+        MUST treat None as "measurement unavailable" and MUST NOT substitute a
+        numeric fallback that would satisfy the strike-extension threshold.
+        """
+        if shoulder is None or wrist is None or elbow is None:
+            # Cannot compute a valid 3-point extension without all three landmarks.
+            return None
+
         shoulder_wrist = distance(shoulder, wrist)
         if shoulder_wrist is None:
-            return 0.0
-            
-        if elbow is not None:
-            upper = distance(shoulder, elbow)
-            fore = distance(elbow, wrist)
-            if upper is not None and fore is not None:
-                total = upper + fore
-            else:
-                total = shoulder_wrist
-        else:
-            # Fallback estimation
-            total = shoulder_wrist
-            
+            return None
+
+        upper = distance(shoulder, elbow)
+        fore  = distance(elbow, wrist)
+        if upper is None or fore is None:
+            return None
+
+        total = upper + fore
         if total == 0.0:
-            return 0.0
-            
+            return None
+
         return float(shoulder_wrist / total)

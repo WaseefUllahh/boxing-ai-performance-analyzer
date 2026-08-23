@@ -83,13 +83,16 @@ KP_CONFIDENCE_THRESHOLD: float = 0.30
 # ─────────────────────────────────────────────────────────────────────────────
 # Strike detection thresholds  (heuristic rules, tunable)
 # ─────────────────────────────────────────────────────────────────────────────
-# Minimum smoothed wrist velocity (pixels/frame) to trigger a strike
-STRIKE_MIN_VELOCITY: float = 25.0
+# Minimum smoothed wrist velocity (pixels/frame) to trigger a strike.
+# Data-driven: measured p80 of smoothed wrist velocity on sample video = ~42 px/frame.
+# Old value (25.0) triggered on 44% of all frames — far too permissive.
+STRIKE_MIN_VELOCITY: float = 42.0
 
 # Maximum smoothed wrist velocity. Anything higher is a tracker teleport artifact.
 STRIKE_MAX_VELOCITY: float = 120.0
 
-# Minimum arm extension ratio (wrist-to-shoulder / forearm) to count as punch
+# Minimum arm extension ratio to count as punch. Requires valid elbow keypoint.
+# A value of None from _arm_extension() (missing elbow) always REJECTS the candidate.
 STRIKE_MIN_EXTENSION: float = 0.65
 
 # Cooldown frames before the same arm can trigger another strike
@@ -97,6 +100,14 @@ STRIKE_COOLDOWN_FRAMES: int = 20
 
 # Enable verbose console debugging for why strikes were triggered
 DEBUG_STRIKES: bool = False
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Keypoint sanity / jitter rejection
+# ─────────────────────────────────────────────────────────────────────────────
+# Maximum single-frame keypoint jump (pixels) before treating the point as missing.
+# Data-driven: raw nose displacement p75=26px (real movement) vs p90=377px (jitter).
+# 60px is a safe rejection gate that accepts real motion and blocks teleportation.
+MAX_KP_JUMP_PX: float = 60.0
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Defense & Outcome detection thresholds (heuristic rules, tunable)
@@ -110,7 +121,17 @@ HIT_DISTANCE_RATIO: float = 0.8
 # Max distance (normalized by shoulder width) for hands to be blocking a target
 GUARD_DISTANCE_RATIO: float = 0.6
 
-# Minimum head velocity to count as a dodging movement
+# Dodge detection uses body-relative head motion (head velocity − shoulder center velocity),
+# normalized by shoulder width, to eliminate camera pan and body-translation noise.
+# Threshold: minimum normalized lateral head velocity (shoulder-widths / frame) for a dodge.
+# In smoothed EMA coordinates, 0.035 SW/frame (~3.5-5px/frame) corresponds to active lateral head slip.
+DODGE_RELATIVE_VELOCITY_THRESHOLD: float = 0.035
+DODGE_MIN_CONSECUTIVE_FRAMES: int = 2
+
+# Minimum head keypoint confidence to use in dodge detection
+MIN_HEAD_KP_CONF_FOR_DODGE: float = 0.40
+
+# Kept for reference only — no longer used in dodge logic (replaced by relative signal)
 DODGE_VELOCITY_THRESHOLD: float = 12.0
 
 # Wrist-to-head distance (relative to shoulder width) below which
@@ -122,6 +143,13 @@ DUCK_HIP_DROP_RATIO: float = 0.15
 
 # Lateral shoulder displacement ratio for "slip" detection
 SLIP_LATERAL_RATIO: float = 0.20
+
+# Minimum ankle keypoint confidence for foot movement tracking
+MIN_ANKLE_KP_CONF: float = 0.25
+
+# Head movement: normalized relative motion gate.
+# Relative head displacement (in shoulder-widths) above this is treated as jitter and rejected.
+HEAD_MOVEMENT_JITTER_GATE_SW: float = 0.30
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Movement analysis & Stance
@@ -210,13 +238,19 @@ class _Config:
     STRIKE_MIN_EXTENSION = STRIKE_MIN_EXTENSION
     STRIKE_COOLDOWN_FRAMES = STRIKE_COOLDOWN_FRAMES
     DEBUG_STRIKES = DEBUG_STRIKES
+    MAX_KP_JUMP_PX = MAX_KP_JUMP_PX
     OUTCOME_WINDOW_FRAMES = OUTCOME_WINDOW_FRAMES
     HIT_DISTANCE_RATIO = HIT_DISTANCE_RATIO
     GUARD_DISTANCE_RATIO = GUARD_DISTANCE_RATIO
+    DODGE_RELATIVE_VELOCITY_THRESHOLD = DODGE_RELATIVE_VELOCITY_THRESHOLD
+    DODGE_MIN_CONSECUTIVE_FRAMES = DODGE_MIN_CONSECUTIVE_FRAMES
+    MIN_HEAD_KP_CONF_FOR_DODGE = MIN_HEAD_KP_CONF_FOR_DODGE
     DODGE_VELOCITY_THRESHOLD = DODGE_VELOCITY_THRESHOLD
     GUARD_WRIST_HEAD_RATIO = GUARD_WRIST_HEAD_RATIO
     DUCK_HIP_DROP_RATIO = DUCK_HIP_DROP_RATIO
     SLIP_LATERAL_RATIO = SLIP_LATERAL_RATIO
+    MIN_ANKLE_KP_CONF = MIN_ANKLE_KP_CONF
+    HEAD_MOVEMENT_JITTER_GATE_SW = HEAD_MOVEMENT_JITTER_GATE_SW
     MOVEMENT_MIN_PIXELS = MOVEMENT_MIN_PIXELS
     MOVEMENT_ADVANCE_VELOCITY = MOVEMENT_ADVANCE_VELOCITY
     MOVEMENT_RETREAT_VELOCITY = MOVEMENT_RETREAT_VELOCITY

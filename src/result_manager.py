@@ -150,18 +150,27 @@ class ResultManager:
         if not movement_dict:
             self._write_csv("movement.csv", ["fighter_id", "status"], [[0, "No data"]])
             return
-            
+
         headers = [
             "fighter_id", "current_stance", "fighter_separation",
             "frames_advancing", "frames_retreating", "frames_stationary",
-            "total_head_movement", "total_center_movement"
+            # head movement: now in shoulder-widths (dimensionless), not pixels
+            "total_head_movement_sw",
+            "total_center_movement",
+            # foot movement: real ankle velocity; separate from center movement
+            "total_foot_movement",
+            "ankle_frames_valid", "ankle_frames_missing"
         ]
         rows = []
         for fid, stats in movement_dict.items():
             rows.append([
-                fid, stats.current_stance, 
+                fid, stats.current_stance,
                 round(stats.fighter_separation, 2) if stats.fighter_separation else None,
                 stats.frames_advancing, stats.frames_retreating, stats.frames_stationary,
-                round(stats.total_head_movement, 2), round(stats.total_center_movement, 2)
+                round(stats.total_head_movement, 4),
+                round(stats.total_center_movement, 2),
+                round(stats.total_foot_movement, 2),
+                stats.ankle_frames_valid,
+                stats.ankle_frames_missing,
             ])
         self._write_csv("movement.csv", headers, rows)

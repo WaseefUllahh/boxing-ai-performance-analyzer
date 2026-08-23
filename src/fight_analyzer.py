@@ -81,8 +81,13 @@ class FightAnalyzer:
                 "dodges": 0,
                 "defensive_movements": 0,
                 # Movement
+                # normalized_head_movement: body-relative head motion in shoulder-widths/s (dimensionless).
+                # Much smaller than the old px/s values (typical range 0.1-2.0 vs old 400-700).
                 "normalized_head_movement": 0.0,
                 "normalized_center_movement": 0.0,
+                # normalized_foot_movement: real ankle velocity / total_seconds (px/s).
+                # None means no ankle data was available.
+                "normalized_foot_movement": None,
                 "time_advancing_pct": 0.0,
                 "time_retreating_pct": 0.0,
                 "time_stationary_pct": 0.0,
@@ -140,15 +145,21 @@ class FightAnalyzer:
             if mov:
                 stats["stance"] = mov.current_stance
                 stats["average_separation"] = mov.fighter_separation
+                # normalized_head_movement is now in shoulder-widths/s (dimensionless)
                 stats["normalized_head_movement"] = mov.total_head_movement / max(total_seconds, 1.0)
                 stats["normalized_center_movement"] = mov.total_center_movement / max(total_seconds, 1.0)
-                
+
+                # normalized_foot_movement: real ankle-based; None if no ankle data
+                if mov.ankle_frames_valid > 0:
+                    stats["normalized_foot_movement"] = mov.total_foot_movement / max(total_seconds, 1.0)
+                else:
+                    stats["normalized_foot_movement"] = None  # no ankle data available
+
                 total_mov_frames = mov.frames_advancing + mov.frames_retreating + mov.frames_stationary
                 stats["time_advancing_pct"] = _safe_div(mov.frames_advancing, total_mov_frames)
                 stats["time_retreating_pct"] = _safe_div(mov.frames_retreating, total_mov_frames)
                 stats["time_stationary_pct"] = _safe_div(mov.frames_stationary, total_mov_frames)
-                
-                # Simple heuristic activity score (0-100 scale approximation)
+
                 action_vol = (stats["total_punches"] * 2.0) + stats["defensive_movements"]
                 mov_vol = (stats["time_advancing_pct"] + stats["time_retreating_pct"]) * 50.0
                 stats["activity_score"] = min(100.0, action_vol + mov_vol)
