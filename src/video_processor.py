@@ -218,13 +218,13 @@ class VideoProcessor:
         # Top banner
         cv2.rectangle(overlay, (0, 0), (width, 60), (0, 0, 0), -1)
         
-        # Sidebars
-        sidebar_w = 260
-        cv2.rectangle(overlay, (0, 60), (sidebar_w, height), (0, 0, 0), -1)
-        cv2.rectangle(overlay, (width - sidebar_w, 60), (width, height), (0, 0, 0), -1)
+        # Sidebars (280px width with 0.75 alpha for high contrast over TV graphics)
+        sidebar_w = 280
+        cv2.rectangle(overlay, (0, 60), (sidebar_w, height), (15, 15, 20), -1)
+        cv2.rectangle(overlay, (width - sidebar_w, 60), (width, height), (15, 15, 20), -1)
         
         # Alpha blending
-        alpha = 0.6
+        alpha = 0.75
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
         
         # Top title
@@ -234,11 +234,11 @@ class VideoProcessor:
         
         # Left Sidebar (Fighter 1)
         f1_stats = stats.get("fighters", {}).get("1", stats.get("fighters", {}).get(1, {}))
-        self._draw_sidebar_text(frame, 10, 95, "FIGHTER 1 (Blue)", self.f1_color, f1_stats)
+        self._draw_sidebar_text(frame, 14, 95, "FIGHTER 1 (Blue)", self.f1_color, f1_stats)
         
         # Right Sidebar (Fighter 2)
         f2_stats = stats.get("fighters", {}).get("2", stats.get("fighters", {}).get(2, {}))
-        self._draw_sidebar_text(frame, width - sidebar_w + 10, 95, "FIGHTER 2 (Red)", self.f2_color, f2_stats)
+        self._draw_sidebar_text(frame, width - sidebar_w + 14, 95, "FIGHTER 2 (Red)", self.f2_color, f2_stats)
 
     def _draw_sidebar_text(self, frame: np.ndarray, x: int, y: int, title: str, color: Tuple, stats: Dict):
         cv2.putText(frame, title, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.65, color, 2, cv2.LINE_AA)
@@ -317,20 +317,27 @@ class VideoProcessor:
             x1, y1, x2, y2 = map(int, box)
             
             active_popups = []
-            y_offset = y1 - 35
+            y_offset = y1 - 30
             
+            # Show at most 3 most recent active popups to prevent vertical clutter
+            displayed = 0
             for p in popups[tid]:
-                if p["frames_left"] > 0:
+                if p["frames_left"] > 0 and displayed < 3 and y_offset > 70:
                     text = p["text"]
                     c = p["color"]
                     
                     (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.65, 2)
-                    cv2.rectangle(frame, (x1, y_offset - th - 6), (x1 + tw + 6, y_offset + 4), (10, 10, 10), -1)
-                    cv2.rectangle(frame, (x1, y_offset - th - 6), (x1 + tw + 6, y_offset + 4), c, 1)
-                    cv2.putText(frame, text, (x1 + 3, y_offset - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.65, c, 2, cv2.LINE_AA)
+                    px = max(10, min(frame.shape[1] - tw - 15, x1))
+                    cv2.rectangle(frame, (px - 4, y_offset - th - 6), (px + tw + 6, y_offset + 4), (10, 10, 15), -1)
+                    cv2.rectangle(frame, (px - 4, y_offset - th - 6), (px + tw + 6, y_offset + 4), c, 1)
+                    cv2.putText(frame, text, (px + 1, y_offset - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.65, c, 2, cv2.LINE_AA)
                     
                     p["frames_left"] -= 1
                     y_offset -= (th + 14)
+                    active_popups.append(p)
+                    displayed += 1
+                elif p["frames_left"] > 0:
+                    p["frames_left"] -= 1
                     active_popups.append(p)
                     
             popups[tid] = active_popups
