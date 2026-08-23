@@ -266,20 +266,53 @@ class VideoProcessor:
             cv2.putText(frame, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (220, 220, 220), 1, cv2.LINE_AA)
             y += 24
 
-    def _draw_fighters(self, frame: np.ndarray, tracked: List[Dict], smoothed_dict: Dict, trails: Dict[int, collections.deque]):
-        """Draw bounding boxes, full COCO skeleton, and movement trails."""
+    def _draw_fighters(
+        self,
+        frame: np.ndarray,
+        tracked: List[Dict],
+        all_candidates: List[Dict],
+        smoothed_dict: Dict,
+        trails: Dict[int, collections.deque],
+        debug_mode: bool = False,
+    ):
+        """Draw bounding boxes, full COCO skeleton, movement trails, and debug role labels."""
         kp_conf_thresh = getattr(CFG, 'KP_CONFIDENCE_THRESHOLD', 0.30)
         
+        # 1. In debug mode, draw all candidates (including referee / spectators)
+        if debug_mode and all_candidates:
+            for cand in all_candidates:
+                role = cand.get("role", "CANDIDATE")
+                if "Fighter" in role:
+                    continue # Will be drawn in primary pass
+                box = cand["bbox"]
+                x1, y1, x2, y2 = map(int, box)
+                raw_tid = cand.get("bot_sort_id", cand.get("track_id", -1))
+                score = cand.get("combat_score", 0.0)
+                
+                # Gray / Yellow for ignored candidates
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (100, 150, 150), 1, cv2.LINE_AA)
+                dbg_label = f"Ignored | track={raw_tid} | score={score:.2f}"
+                (tw, th), baseline = cv2.getTextSize(dbg_label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+                cv2.rectangle(frame, (x1, y1 - th - baseline - 4), (x1 + tw + 4, y1), (30, 30, 30), -1)
+                cv2.putText(frame, dbg_label, (x1 + 2, y1 - baseline - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 200, 200), 1, cv2.LINE_AA)
+
+        # 2. Draw Primary Boxers
         for f in tracked:
             tid = f.get("track_id", f.get("bot_sort_id", -1))
             color = self._get_color(tid)
+            raw_tid = f.get("bot_sort_id", tid)
+            score = f.get("combat_score", 0.0)
             
             # Bounding box
             box = f["bbox"]
             x1, y1, x2, y2 = map(int, box)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             
-            label = f"Fighter {tid}"
+            if debug_mode:
+                label = f"Fighter {tid} | track={raw_tid} | score={score:.2f}"
+            else:
+                label = f"Fighter {tid}"
+                
             (tw, th), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
             cv2.rectangle(frame, (x1, y1 - th - baseline - 4), (x1 + tw + 4, y1), (20, 20, 20), -1)
             cv2.putText(frame, label, (x1 + 2, y1 - baseline - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 1, cv2.LINE_AA)
@@ -292,13 +325,13 @@ class VideoProcessor:
                 if idx_i < len(kps) and idx_j < len(kps):
                     xi, yi, ci = kps[idx_i]
                     xj, yj, cj = kps[idx_j]
-                    if ci >= kp_conf_thresh and cj >= kp_conf_thresh:
+                    if ci >= kp_conf_thresh and cj >= kp_conf_thresh and xi > 2 and yi > 2 and xj > 2 and yj > 2:
                         cv2.line(frame, (int(xi), int(yi)), (int(xj), int(yj)), skel_color, 2, cv2.LINE_AA)
             
             # Skeleton Joints
             for i, (kx, ky, kc) in enumerate(kps):
-                if kc >= kp_conf_thresh:
-                    joint_color = color if i in (9, 10) else (0, 255, 255) # Highlight wrists
+                if kc >= kp_conf_thresh and kx > 2 and ky > 2:
+                    joint_color = color if i in (9, 10) else (0, 255, 255)
                     cv2.circle(frame, (int(kx), int(ky)), 3, joint_color, -1, cv2.LINE_AA)
             
             # Movement Trails
@@ -399,7 +432,7 @@ class VideoProcessor:
             cv2.putText(card, m, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (230, 230, 230), 1, cv2.LINE_AA)
             y += 30
 
-    def process_video(self, video_path: Path, max_frames: Optional[int] = None) -> Dict[str, Any]:
+    def process_video(self, video_path: Path, max_frames: Optional[int] = None, debug_mode: bool = False) -> Dict[str, Any]:
         """
         Executes the full video processing pipeline.
         
@@ -504,7 +537,8 @@ class VideoProcessor:
                     live_stats = aggregator.aggregate(all_events, final_movement, meta.fps, frame_idx + 1)
                     
                     # 5. Render Annotations
-                    self._draw_fighters(frame, tracked, smoothed_dict, trails)
+                    all_cands = getattr(tracker, 'last_all_candidates', tracked)
+                    self._draw_fighters(frame, tracked, all_cands, smoothed_dict, trails, debug_mode=debug_mode)
                     self._draw_hud(frame, meta.width, meta.height, live_stats)
                     self._draw_popups(frame, tracked, popups)
                     

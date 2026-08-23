@@ -72,6 +72,11 @@ class FightAnalyzer:
                 "uppercuts": 0,
                 "attack_frequency": 0.0,
                 # Outcomes
+                "landed": 0,
+                "blocked": 0,
+                "missed": 0,
+                "uncertain": 0,
+                # Backwards-compatible legacy keys
                 "possible_landed": 0,
                 "possible_blocked": 0,
                 "possible_missed": 0,
@@ -118,14 +123,22 @@ class FightAnalyzer:
                 elif e.action == "HOOK": stats["hooks"] += 1
                 elif e.action == "UPPERCUT": stats["uppercuts"] += 1
                 
-                if e.event_type == "POSSIBLE_LANDED": stats["possible_landed"] += 1
-                elif e.event_type == "POSSIBLE_BLOCKED": stats["possible_blocked"] += 1
-                elif e.event_type == "POSSIBLE_MISSED": stats["possible_missed"] += 1
+                evt = e.event_type.upper()
+                if "LANDED" in evt:
+                    stats["landed"] += 1
+                    stats["possible_landed"] += 1
+                    round_stats[r_idx][fid]["possible_landed"] += 1
+                elif "BLOCK" in evt:
+                    stats["blocked"] += 1
+                    stats["possible_blocked"] += 1
+                elif "MISS" in evt:
+                    stats["missed"] += 1
+                    stats["possible_missed"] += 1
+                elif "UNCERTAIN" in evt:
+                    stats["uncertain"] += 1
                 
                 # Round bucketing
                 round_stats[r_idx][fid]["total_punches"] += 1
-                if e.event_type == "POSSIBLE_LANDED":
-                    round_stats[r_idx][fid]["possible_landed"] += 1
                     
             elif e.category == "DEFENSE":
                 stats["defensive_movements"] += 1
