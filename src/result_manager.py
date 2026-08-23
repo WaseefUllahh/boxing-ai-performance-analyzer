@@ -4,9 +4,9 @@ src/result_manager.py — Result Management Layer
 Responsibilities
 ----------------
 - Create a timestamped run directory for each analysis (e.g., outputs/analysis_20260822_131500/).
-- Provide paths for video generation.
+- Provide paths for video generation and safe temporary outputs.
 - Safely export events, movement, and fight stats to CSV and JSON without overwriting previous runs.
-- Collect metadata regarding the run (model, FPS, time taken).
+- Collect metadata regarding the run (model, FPS, time taken, video validation status).
 - Handle missing data or partial failure gracefully.
 """
 
@@ -17,7 +17,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from config import CFG
 from src.events import FightEvent
@@ -36,7 +36,7 @@ class ResultManager:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         self.start_time = time.time()
-        self.metadata = {
+        self.metadata: Dict[str, Any] = {
             "input_filename": input_filename,
             "analysis_timestamp": timestamp,
             "model_name": getattr(CFG, 'MODEL_NAME', 'unknown'),
@@ -46,24 +46,51 @@ class ResultManager:
             "fps": None,
             "total_frames": 0,
             "duration_seconds": 0.0,
-            "processing_time_seconds": 0.0
+            "processing_time_seconds": 0.0,
+            "video_validation": None
         }
 
     def set_video_metadata(self, width: int, height: int, fps: float, total_frames: int):
         self.metadata["video_resolution"] = f"{width}x{height}"
         self.metadata["fps"] = fps
         self.metadata["total_frames"] = total_frames
-        self.metadata["duration_seconds"] = total_frames / max(fps, 1.0)
+        self.metadata["duration_seconds"] = round(total_frames / max(fps, 1.0), 2)
         
     def get_video_output_path(self) -> Path:
-        """Returns the safe path to write the annotated video file."""
+        """Returns the final destination path for the validated annotated video."""
         return self.output_dir / "boxing_analysis.mp4"
         
-    def export_results(self, 
-                       fight_stats: Dict[str, Any], 
-                       events: List[FightEvent], 
-                       final_movement: Dict[int, MovementStats]):
-        """Safely exports all collected metrics to the timestamped directory."""
+    def get_partial_video_path(self) -> Path:
+        """Returns the safe temporary path written during rendering before validation."""
+        return self.output_dir / "boxing_analysis.partial.mp4"
+        
+    def set_video_validation(self, validation_info: Dict[str, Any]):
+        """Records video validation details in the run metadata."""
+        self.metadata["video_validation"] = validation_info
+        
+    def export_results(
+        self, 
+        fight_stats: Dict[str, Any], 
+        events: List[FightEvent], 
+        *args,
+        final_movement: Optional[Dict[int, MovementStats]] = None,
+        **kwargs
+    ):
+        """
+        Safely exports all collected metrics to the timestamped directory.
+        Supports both (fight_stats, events, final_movement) and legacy (fight_stats, strikes, defenses, final_movement).
+        """
+        # Handle legacy 4-argument signature if passed
+        if len(args) == 2 and isinstance(args[0], list) and isinstance(args[1], dict):
+            # args: (defenses_list, final_movement_dict)
+            legacy_defenses = args[0]
+            final_movement = args[1]
+            events = list(events) + list(legacy_defenses)
+        elif len(args) == 1 and isinstance(args[0], dict):
+            final_movement = args[0]
+        elif final_movement is None:
+            final_movement = kwargs.get('final_movement', {})
+
         self.metadata["processing_time_seconds"] = round(time.time() - self.start_time, 2)
         
         self._export_json(fight_stats, "fight_stats.json")
@@ -71,7 +98,8 @@ class ResultManager:
         self._export_fight_stats_csv(fight_stats)
         self._export_round_stats_csv(fight_stats)
         self._export_events_csv(events)
-        self._export_movement_csv(final_movement)
+        if final_movement is not None:
+            self._export_movement_csv(final_movement)
         
     def _export_json(self, data: Dict[str, Any], filename: str):
         try:
@@ -86,11 +114,10 @@ class ResultManager:
 
     def _write_csv(self, filename: str, headers: List[str], rows: List[List[Any]]):
         if not headers and not rows:
-            return # Skip entirely empty tables
+            return
             
         try:
             path = self.output_dir / filename
-            # newline='' avoids blank lines in Windows Excel
             with open(path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
                 if headers:
@@ -142,7 +169,6 @@ class ResultManager:
                 e.supporting_features
             ])
             
-        # Sort by frame number
         rows.sort(key=lambda r: r[1])
         self._write_csv("events.csv", headers, rows)
 
@@ -154,10 +180,8 @@ class ResultManager:
         headers = [
             "fighter_id", "current_stance", "fighter_separation",
             "frames_advancing", "frames_retreating", "frames_stationary",
-            # head movement: now in shoulder-widths (dimensionless), not pixels
             "total_head_movement_sw",
             "total_center_movement",
-            # foot movement: real ankle velocity; separate from center movement
             "total_foot_movement",
             "ankle_frames_valid", "ankle_frames_missing"
         ]
