@@ -1,4 +1,4 @@
-import sys, json
+import sys, json, time
 from pathlib import Path
 
 sys.path.insert(0, '.')
@@ -11,7 +11,7 @@ from src.strike_detector import StrikeDetector
 from src.defense_detector import DefenseAndOutcomeDetector
 
 video_path = "data/fight2.mp4"
-print(f"=== PROCESSING UNSEEN EXTERNAL VIDEO: {video_path} ===")
+print(f"=== PROCESSING UNSEEN EXTERNAL VIDEO: {video_path} ===", flush=True)
 
 tracker = FighterTracker(model_name=CFG.MODEL_NAME, tracker_cfg=CFG.TRACKER, confidence=0.35, iou=0.45, max_fighters=2, device='')
 extractor = PoseFeatureExtractor()
@@ -21,10 +21,11 @@ defense_det = DefenseAndOutcomeDetector()
 
 events = []
 frame_count = 0
+t0 = time.time()
 
 with VideoReader(video_path) as reader:
     meta = reader.meta
-    print(f"Video Info: {meta.width}x{meta.height} @ {meta.fps:.2f} FPS | Total Frames: {meta.frame_count}")
+    print(f"Video Info: {meta.width}x{meta.height} @ {meta.fps:.2f} FPS | Total Frames: {meta.frame_count}", flush=True)
     
     for frame_idx, frame in reader.frames():
         frame_count += 1
@@ -36,7 +37,8 @@ with VideoReader(video_path) as reader:
         for tid, feat in feats_dict.items():
             smoothed = smoothed_dict.get(tid)
             if not smoothed: continue
-            opp_smoothed = next((sf for oid, sf in smoothed_dict.items() if oid != tid), None)
+            opp_tid = 2 if tid == 1 else (1 if tid == 2 else None)
+            opp_smoothed = smoothed_dict.get(opp_tid) if opp_tid else None
             new_strikes.extend(strike_det.detect(feat, smoothed, opp_smoothed, frame_idx, meta.fps))
             
         resolved = defense_det.update(new_strikes, feats_dict, smoothed_dict, frame_idx, meta.fps)
@@ -55,11 +57,13 @@ with VideoReader(video_path) as reader:
                 })
         
         if frame_count % 500 == 0:
-            print(f"  Processed {frame_count}/{meta.frame_count} frames ({frame_count/meta.frame_count*100:.1f}%) | Strikes so far: {len(events)}")
+            elapsed = time.time() - t0
+            fps_proc = frame_count / max(1.0, elapsed)
+            print(f"  Frame {frame_count:4d}/{meta.frame_count} ({frame_count/meta.frame_count*100:.1f}%) | {fps_proc:.1f} FPS | Strikes: {len(events)}", flush=True)
 
-print(f"\nProcessing Complete! Total frames: {frame_count}, Detected Strike Events: {len(events)}")
+print(f"\nProcessing Complete! Processed {frame_count} frames in {time.time()-t0:.1f}s | Detected Strike Events: {len(events)}", flush=True)
 
 with open("fight2_candidates.json", "w") as f:
     json.dump(events, f, indent=2)
 
-print(f"Saved candidate events to fight2_candidates.json")
+print(f"Saved candidate events to fight2_candidates.json", flush=True)

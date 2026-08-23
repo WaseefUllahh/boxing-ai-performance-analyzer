@@ -61,9 +61,9 @@
     "action": "CROSS",
     "hand": "right",
     "target_zone": "BODY",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.397,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "out-of-range feint (init=777.1px > 507.9px)"
   },
   {
     "frame": 279,
@@ -105,9 +105,9 @@
     "action": "CROSS",
     "hand": "right",
     "target_zone": "HEAD",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.506,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "out-of-range feint (init=1240.5px > 417.6px)"
   },
   {
     "frame": 653,
@@ -644,9 +644,9 @@
     "action": "JAB",
     "hand": "left",
     "target_zone": "BODY",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.577,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "clear miss (d_min=482.6px > 177.5px)"
   },
   {
     "frame": 2901,
@@ -1062,9 +1062,9 @@
     "action": "JAB",
     "hand": "right",
     "target_zone": "HEAD",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.48,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "clear miss (d_min=260.3px > 135.5px)"
   },
   {
     "frame": 4450,
@@ -1139,9 +1139,9 @@
     "action": "CROSS",
     "hand": "right",
     "target_zone": "HEAD",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.524,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "clear miss (d_min=252.0px > 129.9px)"
   },
   {
     "frame": 4700,
@@ -1326,9 +1326,9 @@
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.495,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "out-of-range feint (init=421.5px > 328.8px)"
   },
   {
     "frame": 5160,
@@ -1337,9 +1337,9 @@
     "action": "JAB",
     "hand": "left",
     "target_zone": "BODY",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.561,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "clear miss (d_min=292.6px > 148.4px)"
   },
   {
     "frame": 5185,
@@ -1348,9 +1348,9 @@
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
+    "predicted_outcome": "MISSED",
     "confidence": 0.604,
-    "trigger_reason": "occluded/missing target"
+    "trigger_reason": "clear miss (d_min=378.4px > 140.3px)"
   },
   {
     "frame": 5203,

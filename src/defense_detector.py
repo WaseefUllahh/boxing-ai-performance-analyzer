@@ -185,7 +185,10 @@ class DefenseAndOutcomeDetector:
                 ref_sw = self.scale_mgr.get_reference_sw(opponent_tid, frame_idx)
 
                 wrist = att_smooth.left_wrist if ts.event.hand == "left" else att_smooth.right_wrist
-                target = opp_smooth.head_center if ts.event.target_zone_estimate == "HEAD" else opp_smooth.body_center
+                if ts.event.target_zone_estimate == "HEAD":
+                    target = opp_smooth.head_center or opp_smooth.shoulder_center or opp_smooth.body_center
+                else:
+                    target = opp_smooth.body_center or opp_smooth.shoulder_center
 
                 if wrist and target:
                     dist = distance(wrist, target)

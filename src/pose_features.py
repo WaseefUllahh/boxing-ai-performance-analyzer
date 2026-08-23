@@ -95,7 +95,7 @@ def _kp(keypoints: np.ndarray, name: str) -> Optional[Point]:
     if idx is None or idx >= len(keypoints):
         return None
     x, y, c = keypoints[idx]
-    if c < MIN_CONF:
+    if c < MIN_CONF or (x <= 2.0 and y <= 2.0):
         return None
     return (float(x), float(y))
 
