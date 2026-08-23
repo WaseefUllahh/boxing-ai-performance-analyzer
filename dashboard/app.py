@@ -83,12 +83,25 @@ def main():
 
     st.markdown("---")
 
+    # --- SIDEBAR: PREVIOUS ANALYSES ---
+    st.sidebar.header("📁 Past Analyses")
+    existing_dirs = sorted([d for d in CFG.OUTPUT_DIR.glob("analysis_*") if d.is_dir()], key=lambda d: d.stat().st_mtime, reverse=True)
+    
+    if existing_dirs:
+        dir_options = ["None (Upload new video)"] + [d.name for d in existing_dirs]
+        selected_option = st.sidebar.selectbox("Load previous analysis run:", dir_options)
+        if selected_option != "None (Upload new video)":
+            st.session_state['result_dir'] = str(CFG.OUTPUT_DIR / selected_option)
+            st.sidebar.success(f"Loaded: {selected_option}")
+    else:
+        st.sidebar.info("No previous analyses found in outputs/.")
+
     # --- VIDEO INPUT ---
-    st.header("1. Upload Video")
+    st.header("1. Upload Video or Select Past Analysis")
     uploaded_file = st.file_uploader("Upload a short fight clip (MP4 format)", type=["mp4", "mov", "avi"])
 
     # Provide an option to process max frames to prevent long processing in UI
-    max_frames = st.slider("Max Frames to Process (Lower for faster testing)", min_value=100, max_value=2000, value=300, step=100)
+    max_frames = st.slider("Max Frames to Process (Lower for faster testing)", min_value=100, max_value=4000, value=300, step=100)
 
     if uploaded_file is not None:
         
