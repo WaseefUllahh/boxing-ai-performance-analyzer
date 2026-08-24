@@ -7,8 +7,8 @@
     "hand": "left",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.51,
-    "trigger_reason": "out-of-range feint (init=734.1px > 432.9px)"
+    "confidence": 0.537,
+    "trigger_reason": "out-of-range feint (init=740.8px > 432.9px)"
   },
   {
     "frame": 27,
@@ -18,19 +18,41 @@
     "hand": "right",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.403,
-    "trigger_reason": "out-of-range feint (init=639.8px > 409.5px)"
+    "confidence": 0.433,
+    "trigger_reason": "out-of-range feint (init=634.5px > 409.5px)"
   },
   {
-    "frame": 94,
-    "timestamp": 3.76,
+    "frame": 84,
+    "timestamp": 3.36,
     "fighter_id": 1,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.556,
+    "trigger_reason": "clear miss (d_min=251.1px > 159.2px)"
+  },
+  {
+    "frame": 129,
+    "timestamp": 5.16,
+    "fighter_id": 2,
     "action": "CROSS",
     "hand": "left",
     "target_zone": "HEAD",
     "predicted_outcome": "MISSED",
-    "confidence": 0.55,
-    "trigger_reason": "out-of-range feint (init=493.6px > 442.2px)"
+    "confidence": 0.47,
+    "trigger_reason": "out-of-range feint (init=879.6px > 429.1px)"
+  },
+  {
+    "frame": 151,
+    "timestamp": 6.04,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.585,
+    "trigger_reason": "out-of-range feint (init=384.5px > 368.9px)"
   },
   {
     "frame": 151,
@@ -40,19 +62,30 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.456,
-    "trigger_reason": "out-of-range feint (init=876.6px > 370.7px)"
+    "confidence": 0.483,
+    "trigger_reason": "out-of-range feint (init=1142.3px > 366.7px)"
   },
   {
-    "frame": 252,
-    "timestamp": 10.08,
+    "frame": 194,
+    "timestamp": 7.76,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.538,
+    "trigger_reason": "guard interception (d_min=36.7px, guard_thr=92.9px)"
+  },
+  {
+    "frame": 251,
+    "timestamp": 10.04,
     "fighter_id": 2,
     "action": "HOOK",
     "hand": "left",
-    "target_zone": "HEAD",
+    "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.383,
-    "trigger_reason": "out-of-range feint (init=759.1px > 507.7px)"
+    "confidence": 0.264,
+    "trigger_reason": "out-of-range feint (init=711.9px > 506.9px)"
   },
   {
     "frame": 255,
@@ -62,18 +95,18 @@
     "hand": "right",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.397,
-    "trigger_reason": "out-of-range feint (init=777.1px > 507.9px)"
+    "confidence": 0.429,
+    "trigger_reason": "out-of-range feint (init=761.0px > 507.3px)"
   },
   {
-    "frame": 279,
-    "timestamp": 11.16,
+    "frame": 271,
+    "timestamp": 10.84,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.624,
+    "confidence": 0.679,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -84,19 +117,30 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.585,
+    "confidence": 0.602,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 309,
-    "timestamp": 12.36,
+    "frame": 291,
+    "timestamp": 11.64,
     "fighter_id": 2,
-    "action": "HOOK",
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.583,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 311,
+    "timestamp": 12.44,
+    "fighter_id": 2,
+    "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.496,
-    "trigger_reason": "out-of-range feint (init=748.0px > 417.6px)"
+    "confidence": 0.591,
+    "trigger_reason": "out-of-range feint (init=756.0px > 393.1px)"
   },
   {
     "frame": 320,
@@ -106,29 +150,95 @@
     "hand": "right",
     "target_zone": "HEAD",
     "predicted_outcome": "MISSED",
-    "confidence": 0.506,
-    "trigger_reason": "out-of-range feint (init=1240.5px > 417.6px)"
+    "confidence": 0.543,
+    "trigger_reason": "out-of-range feint (init=1236.8px > 393.1px)"
   },
   {
-    "frame": 653,
-    "timestamp": 26.12,
+    "frame": 330,
+    "timestamp": 13.2,
+    "fighter_id": 1,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "BODY",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.657,
+    "trigger_reason": "clean contact (d_min=76.4px <= hit_thr=223.1px, SW_ref=278.8px)"
+  },
+  {
+    "frame": 330,
+    "timestamp": 13.2,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.525,
+    "trigger_reason": "clean contact (d_min=146.2px <= hit_thr=223.1px, SW_ref=278.8px)"
+  },
+  {
+    "frame": 608,
+    "timestamp": 24.32,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.339,
+    "trigger_reason": "clear miss (d_min=136.2px > 124.5px)"
+  },
+  {
+    "frame": 613,
+    "timestamp": 24.52,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.523,
+    "trigger_reason": "clear miss (d_min=294.6px > 122.0px)"
+  },
+  {
+    "frame": 639,
+    "timestamp": 25.56,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.578,
+    "trigger_reason": "clean contact (d_min=29.6px <= hit_thr=106.1px, SW_ref=132.6px)"
+  },
+  {
+    "frame": 652,
+    "timestamp": 26.08,
     "fighter_id": 1,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.631,
+    "confidence": 0.499,
     "trigger_reason": "occluded/missing target"
   },
   {
     "frame": 662,
     "timestamp": 26.47,
     "fighter_id": 1,
-    "action": "JAB",
+    "action": "HOOK",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.621,
+    "confidence": 0.645,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 688,
+    "timestamp": 27.51,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.596,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -139,52 +249,63 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.544,
+    "confidence": 0.579,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 741,
-    "timestamp": 29.63,
-    "fighter_id": 1,
-    "action": "CROSS",
-    "hand": "left",
-    "target_zone": "HEAD",
+    "frame": 773,
+    "timestamp": 30.91,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.519,
-    "trigger_reason": "clear miss (d_min=172.4px > 130.1px)"
+    "confidence": 0.418,
+    "trigger_reason": "clear miss (d_min=248.2px > 151.1px)"
+  },
+  {
+    "frame": 775,
+    "timestamp": 30.99,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.464,
+    "trigger_reason": "clear miss (d_min=274.5px > 151.1px)"
   },
   {
     "frame": 801,
     "timestamp": 32.03,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.459,
-    "trigger_reason": "out-of-range feint (init=488.1px > 418.3px)"
+    "confidence": 0.565,
+    "trigger_reason": "out-of-range feint (init=561.1px > 418.3px)"
   },
   {
     "frame": 810,
     "timestamp": 32.39,
     "fighter_id": 2,
-    "action": "JAB",
+    "action": "CROSS",
     "hand": "right",
-    "target_zone": "HEAD",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.508,
-    "trigger_reason": "ambiguous boundary zone (133.7px < d_min=136.0px <= 150.4px)"
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.616,
+    "trigger_reason": "guard interception (d_min=47.6px, guard_thr=100.2px)"
   },
   {
     "frame": 821,
     "timestamp": 32.83,
     "fighter_id": 1,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "right",
-    "target_zone": "UNKNOWN",
+    "target_zone": "BODY",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.601,
-    "trigger_reason": "occluded/missing target"
+    "confidence": 0.669,
+    "trigger_reason": "ambiguous boundary zone (115.3px < d_min=17.8px <= 129.7px)"
   },
   {
     "frame": 831,
@@ -194,7 +315,18 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.551,
+    "confidence": 0.579,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 864,
+    "timestamp": 34.55,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.447,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -205,29 +337,18 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.632,
+    "confidence": 0.667,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 917,
-    "timestamp": 36.67,
-    "fighter_id": 1,
-    "action": "CROSS",
-    "hand": "right",
-    "target_zone": "BODY",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.539,
-    "trigger_reason": "ambiguous boundary zone (134.1px < d_min=118.5px <= 150.8px)"
-  },
-  {
-    "frame": 958,
-    "timestamp": 38.31,
+    "frame": 946,
+    "timestamp": 37.83,
     "fighter_id": 2,
-    "action": "UPPERCUT",
+    "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.642,
+    "confidence": 0.525,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -238,51 +359,40 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.655,
+    "confidence": 0.697,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1037,
-    "timestamp": 41.47,
+    "frame": 971,
+    "timestamp": 38.83,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.668,
-    "trigger_reason": "occluded/missing target"
-  },
-  {
-    "frame": 1061,
-    "timestamp": 42.43,
-    "fighter_id": 1,
-    "action": "JAB",
-    "hand": "left",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.696,
-    "trigger_reason": "occluded/missing target"
+    "predicted_outcome": "LANDED",
+    "confidence": 0.564,
+    "trigger_reason": "clean contact (d_min=122.8px <= hit_thr=132.8px, SW_ref=166.0px)"
   },
   {
     "frame": 1142,
     "timestamp": 45.67,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "right",
-    "target_zone": "UNKNOWN",
+    "target_zone": "HEAD",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.455,
-    "trigger_reason": "occluded/missing target"
+    "confidence": 0.447,
+    "trigger_reason": "ambiguous boundary zone (125.2px < d_min=127.7px <= 140.9px)"
   },
   {
-    "frame": 1149,
-    "timestamp": 45.95,
+    "frame": 1148,
+    "timestamp": 45.91,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.401,
+    "confidence": 0.388,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -293,7 +403,18 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.387,
+    "confidence": 0.396,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1200,
+    "timestamp": 47.99,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.669,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -304,7 +425,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.535,
+    "confidence": 0.573,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -315,7 +436,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.463,
+    "confidence": 0.5,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -326,18 +447,29 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.479,
+    "confidence": 0.498,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1358,
-    "timestamp": 54.31,
+    "frame": 1329,
+    "timestamp": 53.15,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.423,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1354,
+    "timestamp": 54.15,
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.626,
+    "confidence": 0.477,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -348,7 +480,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.301,
+    "confidence": 0.34,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -359,7 +491,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.433,
+    "confidence": 0.448,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -370,7 +502,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.647,
+    "confidence": 0.693,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -381,18 +513,29 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.665,
+    "confidence": 0.734,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1452,
-    "timestamp": 58.07,
+    "frame": 1451,
+    "timestamp": 58.03,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.474,
+    "confidence": 0.382,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1479,
+    "timestamp": 59.15,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.58,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -403,7 +546,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.664,
+    "confidence": 0.703,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -414,7 +557,18 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.488,
+    "confidence": 0.535,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1616,
+    "timestamp": 64.63,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.559,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -425,7 +579,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.41,
+    "confidence": 0.438,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -436,7 +590,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.6,
+    "confidence": 0.634,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -447,18 +601,29 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.453,
+    "confidence": 0.507,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1723,
-    "timestamp": 68.91,
+    "frame": 1690,
+    "timestamp": 67.59,
     "fighter_id": 2,
     "action": "HOOK",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.386,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1724,
+    "timestamp": 68.95,
+    "fighter_id": 2,
+    "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.512,
+    "confidence": 0.701,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -469,7 +634,18 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.668,
+    "confidence": 0.633,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1773,
+    "timestamp": 70.91,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.43,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -480,29 +656,40 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.583,
+    "confidence": 0.599,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1807,
-    "timestamp": 72.27,
+    "frame": 1811,
+    "timestamp": 72.43,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.512,
+    "confidence": 0.481,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 1877,
-    "timestamp": 75.07,
+    "frame": 1873,
+    "timestamp": 74.91,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.505,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 1876,
+    "timestamp": 75.03,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.592,
+    "confidence": 0.749,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -513,18 +700,29 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.449,
+    "confidence": 0.451,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 2047,
-    "timestamp": 81.86,
+    "frame": 2038,
+    "timestamp": 81.5,
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.514,
+    "confidence": 0.58,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 2081,
+    "timestamp": 83.22,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.582,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -533,10 +731,10 @@
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
-    "target_zone": "UNKNOWN",
+    "target_zone": "BODY",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.651,
-    "trigger_reason": "occluded/missing target"
+    "confidence": 0.697,
+    "trigger_reason": "ambiguous boundary zone (125.0px < d_min=118.6px <= 140.7px)"
   },
   {
     "frame": 2106,
@@ -544,42 +742,64 @@
     "fighter_id": 2,
     "action": "HOOK",
     "hand": "right",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.554,
-    "trigger_reason": "occluded/missing target"
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.608,
+    "trigger_reason": "clear miss (d_min=143.9px > 140.7px)"
   },
   {
-    "frame": 2313,
-    "timestamp": 92.5,
+    "frame": 2345,
+    "timestamp": 93.78,
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.548,
+    "confidence": 0.502,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 2571,
-    "timestamp": 102.82,
+    "frame": 2452,
+    "timestamp": 98.06,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.533,
+    "trigger_reason": "out-of-range feint (init=334.1px > 297.8px)"
+  },
+  {
+    "frame": 2506,
+    "timestamp": 100.22,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.603,
+    "confidence": 0.593,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 2636,
-    "timestamp": 105.42,
+    "frame": 2570,
+    "timestamp": 102.78,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.586,
+    "trigger_reason": "clear miss (d_min=220.0px > 107.9px)"
+  },
+  {
+    "frame": 2637,
+    "timestamp": 105.46,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.709,
+    "confidence": 0.629,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -590,7 +810,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.439,
+    "confidence": 0.469,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -600,19 +820,19 @@
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.605,
-    "trigger_reason": "occluded/missing target"
+    "predicted_outcome": "MISSED",
+    "confidence": 0.654,
+    "trigger_reason": "out-of-range feint (init=339.8px > 299.7px)"
   },
   {
-    "frame": 2686,
-    "timestamp": 107.42,
+    "frame": 2683,
+    "timestamp": 107.3,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.47,
+    "confidence": 0.7,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -621,10 +841,10 @@
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.513,
-    "trigger_reason": "out-of-range feint (init=334.0px > 305.9px)"
+    "confidence": 0.62,
+    "trigger_reason": "out-of-range feint (init=601.0px > 352.9px)"
   },
   {
     "frame": 2734,
@@ -633,9 +853,9 @@
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.582,
-    "trigger_reason": "out-of-range feint (init=734.4px > 496.1px)"
+    "predicted_outcome": "LANDED",
+    "confidence": 0.593,
+    "trigger_reason": "clean contact (d_min=98.9px <= hit_thr=150.2px, SW_ref=187.7px)"
   },
   {
     "frame": 2737,
@@ -643,31 +863,64 @@
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.577,
-    "trigger_reason": "clear miss (d_min=482.6px > 177.5px)"
+    "confidence": 0.676,
+    "trigger_reason": "out-of-range feint (init=557.3px > 454.5px)"
   },
   {
-    "frame": 2901,
-    "timestamp": 116.02,
+    "frame": 2790,
+    "timestamp": 111.58,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.619,
+    "trigger_reason": "clear miss (d_min=190.6px > 134.4px)"
+  },
+  {
+    "frame": 2796,
+    "timestamp": 111.82,
+    "fighter_id": 2,
+    "action": "UPPERCUT",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.273,
+    "trigger_reason": "clean contact (d_min=44.7px <= hit_thr=119.4px, SW_ref=149.3px)"
+  },
+  {
+    "frame": 2909,
+    "timestamp": 116.34,
     "fighter_id": 2,
     "action": "HOOK",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.379,
+    "confidence": 0.406,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 2918,
-    "timestamp": 116.7,
+    "frame": 2914,
+    "timestamp": 116.54,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "HOOK",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.572,
+    "confidence": 0.583,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 2938,
+    "timestamp": 117.5,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.372,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -678,95 +931,117 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.466,
+    "confidence": 0.48,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 2948,
-    "timestamp": 117.9,
+    "frame": 3030,
+    "timestamp": 121.18,
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.562,
+    "confidence": 0.7,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3060,
-    "timestamp": 122.38,
+    "frame": 3057,
+    "timestamp": 122.26,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.615,
+    "confidence": 0.761,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3116,
-    "timestamp": 124.62,
+    "frame": 3115,
+    "timestamp": 124.58,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.704,
+    "confidence": 0.505,
     "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 3135,
+    "timestamp": 125.38,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.432,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 3153,
+    "timestamp": 126.1,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.678,
+    "trigger_reason": "clear miss (d_min=336.9px > 122.9px)"
   },
   {
     "frame": 3269,
     "timestamp": 130.74,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "left",
-    "target_zone": "HEAD",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.502,
-    "trigger_reason": "clear miss (d_min=236.0px > 153.6px)"
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.601,
+    "trigger_reason": "guard interception (d_min=12.8px, guard_thr=96.9px)"
   },
   {
-    "frame": 3282,
-    "timestamp": 131.26,
+    "frame": 3281,
+    "timestamp": 131.22,
     "fighter_id": 1,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.594,
+    "confidence": 0.586,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3305,
-    "timestamp": 132.17,
+    "frame": 3301,
+    "timestamp": 132.01,
     "fighter_id": 1,
-    "action": "CROSS",
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.592,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 3304,
+    "timestamp": 132.13,
+    "fighter_id": 1,
+    "action": "HOOK",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.515,
+    "confidence": 0.37,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3306,
-    "timestamp": 132.21,
+    "frame": 3324,
+    "timestamp": 132.93,
     "fighter_id": 1,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.608,
-    "trigger_reason": "occluded/missing target"
-  },
-  {
-    "frame": 3332,
-    "timestamp": 133.25,
-    "fighter_id": 1,
-    "action": "JAB",
-    "hand": "left",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.61,
+    "confidence": 0.598,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -777,7 +1052,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.577,
+    "confidence": 0.605,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -788,7 +1063,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.577,
+    "confidence": 0.714,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -799,40 +1074,51 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.483,
+    "confidence": 0.511,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3432,
-    "timestamp": 137.25,
+    "frame": 3429,
+    "timestamp": 137.13,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.59,
+    "confidence": 0.595,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 3480,
-    "timestamp": 139.17,
+    "frame": 3474,
+    "timestamp": 138.93,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.613,
+    "trigger_reason": "clear miss (d_min=164.5px > 151.0px)"
+  },
+  {
+    "frame": 3479,
+    "timestamp": 139.13,
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.564,
-    "trigger_reason": "occluded/missing target"
+    "predicted_outcome": "MISSED",
+    "confidence": 0.658,
+    "trigger_reason": "clear miss (d_min=250.3px > 151.0px)"
   },
   {
-    "frame": 3595,
-    "timestamp": 143.77,
+    "frame": 3581,
+    "timestamp": 143.21,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "HOOK",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.653,
+    "confidence": 0.334,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -843,7 +1129,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.655,
+    "confidence": 0.68,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -854,7 +1140,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.647,
+    "confidence": 0.69,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -865,41 +1151,41 @@
     "hand": "left",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.274,
-    "trigger_reason": "out-of-range feint (init=472.5px > 386.6px)"
+    "confidence": 0.287,
+    "trigger_reason": "out-of-range feint (init=487.0px > 386.6px)"
   },
   {
     "frame": 3792,
     "timestamp": 151.65,
     "fighter_id": 1,
-    "action": "JAB",
+    "action": "CROSS",
     "hand": "right",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.655,
-    "trigger_reason": "out-of-range feint (init=331.1px > 275.6px)"
+    "confidence": 0.718,
+    "trigger_reason": "out-of-range feint (init=660.7px > 289.0px)"
   },
   {
     "frame": 3793,
     "timestamp": 151.69,
     "fighter_id": 1,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.478,
-    "trigger_reason": "out-of-range feint (init=395.1px > 275.9px)"
+    "confidence": 0.578,
+    "trigger_reason": "out-of-range feint (init=676.5px > 289.0px)"
   },
   {
-    "frame": 3892,
-    "timestamp": 155.65,
+    "frame": 3878,
+    "timestamp": 155.09,
     "fighter_id": 1,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.656,
-    "trigger_reason": "occluded/missing target"
+    "predicted_outcome": "MISSED",
+    "confidence": 0.46,
+    "trigger_reason": "out-of-range feint (init=750.3px > 293.0px)"
   },
   {
     "frame": 3917,
@@ -909,8 +1195,30 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.538,
+    "confidence": 0.589,
     "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 3931,
+    "timestamp": 157.21,
+    "fighter_id": 1,
+    "action": "HOOK",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.543,
+    "trigger_reason": "out-of-range feint (init=1260.6px > 620.8px)"
+  },
+  {
+    "frame": 3938,
+    "timestamp": 157.49,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.457,
+    "trigger_reason": "clear miss (d_min=406.2px > 223.0px)"
   },
   {
     "frame": 3952,
@@ -919,9 +1227,9 @@
     "action": "HOOK",
     "hand": "left",
     "target_zone": "BODY",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.318,
-    "trigger_reason": "clear miss (d_min=276.4px > 221.2px)"
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.326,
+    "trigger_reason": "guard interception (d_min=127.1px, guard_thr=147.7px)"
   },
   {
     "frame": 3963,
@@ -929,53 +1237,108 @@
     "fighter_id": 2,
     "action": "CROSS",
     "hand": "left",
+    "target_zone": "HEAD",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.601,
+    "trigger_reason": "clear miss (d_min=182.4px > 135.5px)"
+  },
+  {
+    "frame": 3969,
+    "timestamp": 158.73,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.593,
+    "trigger_reason": "guard interception (d_min=77.1px, guard_thr=90.4px)"
+  },
+  {
+    "frame": 3972,
+    "timestamp": 158.85,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "left",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.558,
-    "trigger_reason": "clear miss (d_min=188.5px > 135.5px)"
+    "confidence": 0.62,
+    "trigger_reason": "clear miss (d_min=147.6px > 134.9px)"
   },
   {
-    "frame": 4107,
-    "timestamp": 164.25,
-    "fighter_id": 1,
-    "action": "HOOK",
-    "hand": "right",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.491,
-    "trigger_reason": "occluded/missing target"
-  },
-  {
-    "frame": 4128,
-    "timestamp": 165.09,
-    "fighter_id": 1,
-    "action": "JAB",
-    "hand": "left",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.66,
-    "trigger_reason": "occluded/missing target"
-  },
-  {
-    "frame": 4133,
-    "timestamp": 165.29,
+    "frame": 4088,
+    "timestamp": 163.49,
     "fighter_id": 1,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.375,
+    "confidence": 0.458,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4201,
-    "timestamp": 168.01,
-    "fighter_id": 2,
-    "action": "HOOK",
+    "frame": 4123,
+    "timestamp": 164.89,
+    "fighter_id": 1,
+    "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.489,
+    "confidence": 0.554,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4123,
+    "timestamp": 164.89,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.648,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4145,
+    "timestamp": 165.77,
+    "fighter_id": 1,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.652,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4147,
+    "timestamp": 165.85,
+    "fighter_id": 1,
+    "action": "HOOK",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.554,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4187,
+    "timestamp": 167.45,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.572,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4194,
+    "timestamp": 167.73,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.542,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -986,7 +1349,18 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.615,
+    "confidence": 0.661,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4215,
+    "timestamp": 168.57,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.712,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -997,7 +1371,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.567,
+    "confidence": 0.599,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1008,8 +1382,30 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.577,
+    "confidence": 0.612,
     "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4257,
+    "timestamp": 170.25,
+    "fighter_id": 2,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.57,
+    "trigger_reason": "clear miss (d_min=324.3px > 144.5px)"
+  },
+  {
+    "frame": 4262,
+    "timestamp": 170.45,
+    "fighter_id": 1,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.53,
+    "trigger_reason": "clear miss (d_min=264.5px > 158.1px)"
   },
   {
     "frame": 4263,
@@ -1018,9 +1414,9 @@
     "action": "JAB",
     "hand": "right",
     "target_zone": "BODY",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.543,
-    "trigger_reason": "clear miss (d_min=146.3px > 141.3px)"
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.564,
+    "trigger_reason": "ambiguous boundary zone (126.8px < d_min=139.1px <= 142.7px)"
   },
   {
     "frame": 4305,
@@ -1030,7 +1426,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.538,
+    "confidence": 0.553,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1041,7 +1437,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.578,
+    "confidence": 0.615,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1052,19 +1448,19 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.395,
+    "confidence": 0.411,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4381,
-    "timestamp": 175.21,
+    "frame": 4382,
+    "timestamp": 175.25,
     "fighter_id": 1,
-    "action": "JAB",
+    "action": "HOOK",
     "hand": "right",
-    "target_zone": "HEAD",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.48,
-    "trigger_reason": "clear miss (d_min=260.3px > 135.5px)"
+    "target_zone": "BODY",
+    "predicted_outcome": "BLOCKED",
+    "confidence": 0.508,
+    "trigger_reason": "guard interception (d_min=70.1px, guard_thr=89.9px)"
   },
   {
     "frame": 4450,
@@ -1074,7 +1470,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.616,
+    "confidence": 0.646,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1085,7 +1481,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.566,
+    "confidence": 0.581,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1096,8 +1492,30 @@
     "hand": "left",
     "target_zone": "BODY",
     "predicted_outcome": "MISSED",
-    "confidence": 0.626,
-    "trigger_reason": "clear miss (d_min=218.1px > 127.8px)"
+    "confidence": 0.682,
+    "trigger_reason": "clear miss (d_min=211.4px > 127.8px)"
+  },
+  {
+    "frame": 4560,
+    "timestamp": 182.37,
+    "fighter_id": 2,
+    "action": "HOOK",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.43,
+    "trigger_reason": "out-of-range feint (init=357.7px > 354.9px)"
+  },
+  {
+    "frame": 4578,
+    "timestamp": 183.09,
+    "fighter_id": 2,
+    "action": "CROSS",
+    "hand": "left",
+    "target_zone": "HEAD",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.479,
+    "trigger_reason": "clean contact (d_min=78.4px <= hit_thr=110.5px, SW_ref=138.2px)"
   },
   {
     "frame": 4597,
@@ -1107,62 +1525,84 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.587,
+    "confidence": 0.614,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4602,
-    "timestamp": 184.04,
+    "frame": 4601,
+    "timestamp": 184.0,
     "fighter_id": 1,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.591,
+    "confidence": 0.418,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4621,
-    "timestamp": 184.8,
+    "frame": 4617,
+    "timestamp": 184.64,
     "fighter_id": 1,
-    "action": "CROSS",
+    "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.42,
-    "trigger_reason": "clear miss (d_min=297.3px > 110.9px)"
+    "confidence": 0.588,
+    "trigger_reason": "out-of-range feint (init=327.7px > 297.6px)"
   },
   {
-    "frame": 4689,
-    "timestamp": 187.52,
-    "fighter_id": 1,
+    "frame": 4625,
+    "timestamp": 184.96,
+    "fighter_id": 2,
     "action": "CROSS",
+    "hand": "right",
+    "target_zone": "BODY",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.472,
+    "trigger_reason": "ambiguous boundary zone (130.7px < d_min=133.6px <= 147.0px)"
+  },
+  {
+    "frame": 4635,
+    "timestamp": 185.36,
+    "fighter_id": 2,
+    "action": "UPPERCUT",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.73,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 4677,
+    "timestamp": 187.04,
+    "fighter_id": 1,
+    "action": "JAB",
     "hand": "right",
     "target_zone": "HEAD",
     "predicted_outcome": "MISSED",
-    "confidence": 0.524,
-    "trigger_reason": "clear miss (d_min=252.0px > 129.9px)"
+    "confidence": 0.387,
+    "trigger_reason": "clear miss (d_min=204.5px > 129.9px)"
   },
   {
     "frame": 4700,
     "timestamp": 187.96,
     "fighter_id": 1,
-    "action": "JAB",
+    "action": "CROSS",
     "hand": "left",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.585,
-    "trigger_reason": "occluded/missing target"
+    "target_zone": "HEAD",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.56,
+    "trigger_reason": "clear miss (d_min=178.7px > 129.9px)"
   },
   {
-    "frame": 4713,
-    "timestamp": 188.48,
+    "frame": 4708,
+    "timestamp": 188.28,
     "fighter_id": 1,
     "action": "HOOK",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.461,
+    "confidence": 0.61,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1173,7 +1613,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.521,
+    "confidence": 0.569,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1184,7 +1624,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.646,
+    "confidence": 0.639,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1195,7 +1635,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.403,
+    "confidence": 0.453,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1206,7 +1646,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.566,
+    "confidence": 0.592,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1217,19 +1657,19 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.57,
+    "confidence": 0.618,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4798,
-    "timestamp": 191.88,
+    "frame": 4789,
+    "timestamp": 191.52,
     "fighter_id": 1,
-    "action": "UPPERCUT",
+    "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
-    "predicted_outcome": "MISSED",
-    "confidence": 0.514,
-    "trigger_reason": "clear miss (d_min=169.4px > 126.1px)"
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "LANDED",
+    "confidence": 0.627,
+    "trigger_reason": "clean contact (d_min=58.4px <= hit_thr=108.7px, SW_ref=135.9px)"
   },
   {
     "frame": 4856,
@@ -1239,7 +1679,7 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.519,
+    "confidence": 0.55,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1250,7 +1690,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.603,
+    "confidence": 0.645,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1261,7 +1701,7 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.544,
+    "confidence": 0.575,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1272,18 +1712,18 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.395,
+    "confidence": 0.431,
     "trigger_reason": "occluded/missing target"
   },
   {
-    "frame": 4959,
-    "timestamp": 198.32,
+    "frame": 4945,
+    "timestamp": 197.76,
     "fighter_id": 2,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.471,
+    "confidence": 0.729,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1293,19 +1733,19 @@
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.599,
-    "trigger_reason": "occluded/missing target"
+    "predicted_outcome": "MISSED",
+    "confidence": 0.624,
+    "trigger_reason": "out-of-range feint (init=458.1px > 361.1px)"
   },
   {
-    "frame": 5010,
-    "timestamp": 200.36,
+    "frame": 5009,
+    "timestamp": 200.32,
     "fighter_id": 2,
-    "action": "CROSS",
+    "action": "HOOK",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.577,
+    "confidence": 0.494,
     "trigger_reason": "occluded/missing target"
   },
   {
@@ -1316,30 +1756,52 @@
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.556,
-    "trigger_reason": "out-of-range feint (init=430.0px > 410.6px)"
+    "confidence": 0.594,
+    "trigger_reason": "out-of-range feint (init=457.5px > 327.4px)"
   },
   {
-    "frame": 5134,
-    "timestamp": 205.32,
+    "frame": 5108,
+    "timestamp": 204.28,
     "fighter_id": 1,
     "action": "JAB",
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.495,
-    "trigger_reason": "out-of-range feint (init=421.5px > 328.8px)"
+    "confidence": 0.565,
+    "trigger_reason": "out-of-range feint (init=593.0px > 340.8px)"
   },
   {
-    "frame": 5160,
-    "timestamp": 206.36,
+    "frame": 5128,
+    "timestamp": 205.08,
     "fighter_id": 1,
     "action": "JAB",
     "hand": "left",
-    "target_zone": "BODY",
+    "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.561,
-    "trigger_reason": "clear miss (d_min=292.6px > 148.4px)"
+    "confidence": 0.625,
+    "trigger_reason": "out-of-range feint (init=595.2px > 339.6px)"
+  },
+  {
+    "frame": 5149,
+    "timestamp": 205.92,
+    "fighter_id": 1,
+    "action": "JAB",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.537,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 5162,
+    "timestamp": 206.44,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.461,
+    "trigger_reason": "out-of-range feint (init=493.9px > 418.1px)"
   },
   {
     "frame": 5185,
@@ -1349,29 +1811,40 @@
     "hand": "left",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "MISSED",
-    "confidence": 0.604,
-    "trigger_reason": "clear miss (d_min=378.4px > 140.3px)"
+    "confidence": 0.629,
+    "trigger_reason": "out-of-range feint (init=548.7px > 357.2px)"
   },
   {
-    "frame": 5203,
-    "timestamp": 208.08,
+    "frame": 5186,
+    "timestamp": 207.4,
+    "fighter_id": 1,
+    "action": "CROSS",
+    "hand": "right",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "MISSED",
+    "confidence": 0.685,
+    "trigger_reason": "out-of-range feint (init=371.1px > 357.2px)"
+  },
+  {
+    "frame": 5209,
+    "timestamp": 208.32,
+    "fighter_id": 1,
+    "action": "HOOK",
+    "hand": "left",
+    "target_zone": "UNKNOWN",
+    "predicted_outcome": "UNCERTAIN",
+    "confidence": 0.484,
+    "trigger_reason": "occluded/missing target"
+  },
+  {
+    "frame": 5217,
+    "timestamp": 208.64,
     "fighter_id": 1,
     "action": "CROSS",
     "hand": "right",
     "target_zone": "UNKNOWN",
     "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.414,
-    "trigger_reason": "occluded/missing target"
-  },
-  {
-    "frame": 5212,
-    "timestamp": 208.44,
-    "fighter_id": 1,
-    "action": "JAB",
-    "hand": "left",
-    "target_zone": "UNKNOWN",
-    "predicted_outcome": "UNCERTAIN",
-    "confidence": 0.584,
+    "confidence": 0.602,
     "trigger_reason": "occluded/missing target"
   }
 ]
