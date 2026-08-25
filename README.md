@@ -1,145 +1,251 @@
-# Boxing AI Performance Analyzer
+<div align="center">
 
-The **Boxing AI Performance Analyzer** is an experimental Computer Vision system designed to evaluate and quantify boxing performance from 2D video footage. By extracting skeletal structures and calculating spatial-temporal movement, the analyzer estimates a boxer's performance by counting strikes, identifying stances, logging defensive maneuvers, and visualizing movement patterns. 
+# 🥊 Boxing AI Performance Analyzer
 
-Built entirely on heuristic geometric modeling rather than supervised action-classification models, this tool serves as a foundational proof-of-concept for automated combat sports analytics.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/YOLOv8-Pose-00FFEA?style=for-the-badge&logo=ultralytics&logoColor=black"/>
+  <img src="https://img.shields.io/badge/PyTorch-2.7-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenCV-4.9%2B-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white"/>
+</p>
 
-## Technologies
+<p align="center">
+  <b>A real-time computer vision system that turns raw boxing footage into quantified performance intelligence.</b><br/>
+  Pose estimation · Strike classification · Defensive analytics · Live HUD · Interactive dashboard
+</p>
 
-- **Core**: Python 3.10+
-- **Computer Vision**: OpenCV, Ultralytics YOLOv8
-- **Deep Learning**: PyTorch
-- **Tracking**: BoT-SORT
-- **Dashboard & Visualization**: Streamlit, Plotly, Pandas
+---
 
-## Current MVP
+</div>
 
-The Minimum Viable Product (MVP) is currently functional and capable of the following:
-- Tracking up to two fighters in a standard 2D video feed.
-- Extracting 17-point skeletal keypoints using YOLOv8-Pose.
-- Deriving basic geometric features (wrist velocity, arm extension, stance width).
-- Estimating strike categories (Jab, Cross, Hook, Uppercut) using hardcoded trajectory heuristics.
-- Estimating defensive maneuvers (Blocks, Dodges) based on guard proximity and head displacement.
-- Outputting an annotated MP4 video with a live HUD and providing a Streamlit dashboard to view aggregated statistics.
+## 🧠 What Is This?
 
-## Architecture & Pipeline
+**Boxing AI Performance Analyzer** is an experimental Computer Vision pipeline that processes standard 2D boxing video and produces a rich, frame-level breakdown of fighter performance — entirely **without any labeled training data or supervised action classifiers**.
 
-The system is built on a modular, multi-stage, frame-by-frame processing pipeline.
+It extracts 17-point skeletal keypoints per fighter using **YOLOv8-Pose**, maintains stable cross-frame identities via **BoT-SORT** tracking, and runs a custom **temporal smoothing + kinematic coasting** layer to produce stable velocity and acceleration signals. On top of that, a set of rigorously tuned geometric heuristics classify every detected punch (Jab / Cross / Hook / Uppercut), estimate defensive actions (Blocks / Dodges), and predict strike outcomes (Landed / Blocked / Missed).
+
+The result is an annotated MP4 with a live HUD overlay, a full event log, and an interactive **Streamlit dashboard** — all from a single video file.
+
+> **Tested on:** Canelo Álvarez vs. Gennady Golovkin II — 5,254 frames at 1080p / 25 FPS → **168 detected strike events** with per-frame physical diagnostics.
+
+---
+
+## ✨ Feature Highlights
+
+| Capability | Detail |
+|---|---|
+| 🦴 **Skeletal Tracking** | 17 COCO keypoints per fighter via YOLOv8n-Pose |
+| 🔁 **Identity Persistence** | BoT-SORT tracks fighters across occlusions and crossings |
+| 📉 **Temporal Smoothing** | Per-joint EMA with adaptive jitter gating and 5-frame kinematic coasting |
+| 👊 **Strike Detection** | Velocity + arm-extension heuristics with 20-frame cooldown debounce |
+| 🥋 **Punch Classification** | Jab, Cross, Hook, Uppercut — classified by 2D wrist trajectory vector |
+| 🛡️ **Defense Detection** | Guard-proximity blocks + body-relative head-motion dodge detection |
+| 🎯 **Outcome Estimation** | Landed / Blocked / Missed / Feint — via wrist-to-opponent-bbox intersection |
+| 📊 **Multi-signal Confidence** | Velocity × Extension × Keypoint Quality × Proximity (practical range: 0.2–0.8) |
+| 🎥 **Annotated Video** | Skeleton overlays, movement trails, floating event popups, HUD |
+| 📈 **Interactive Dashboard** | Streamlit app with Plotly charts for aggregated fight statistics |
+
+---
+
+## 🏗️ Architecture & Pipeline
 
 ```mermaid
 graph TD
-    A[Video Input] --> B[YOLOv8-Pose Inference]
-    B --> C[BoT-SORT Tracker]
-    C --> D[Pose Feature Extraction]
-    D --> E[Temporal Smoothing EMA]
-    E --> F[Heuristic Action Detection]
-    F --> G[Movement Analyzer]
-    F --> H[Fight Aggregator]
-    G --> H
-    H --> I[Dashboard & Annotated Video]
+    A[🎬 Video Input] --> B[YOLOv8-Pose Inference]
+    B --> C[BoT-SORT Multi-Object Tracker]
+    C --> D[PoseFeatureExtractor - 17-point geometry]
+    D --> E[TemporalFeatureManager - EMA + Kinematic Coasting]
+    E --> F{Heuristic Engines}
+    F --> G[StrikeDetector - Jab · Cross · Hook · Uppercut]
+    F --> H[DefenseDetector - Blocks · Dodges]
+    G --> I[FightAggregator]
+    H --> I
+    E --> J[MovementAnalyzer - Advancing · Retreating]
+    J --> I
+    I --> K[ResultManager]
+    K --> L[📹 Annotated MP4]
+    K --> M[📄 events.csv + movement.csv]
+    K --> N[🗂️ fight_stats.json]
+    I --> O[📊 Streamlit Dashboard]
 ```
 
-### 1. YOLO Pose
-We use `yolov8n-pose` (Nano) to perform single-shot human pose estimation. For each detected person, YOLO outputs a bounding box and 17 COCO keypoints (x, y, confidence) corresponding to joints like wrists, elbows, shoulders, and ankles.
+### Key Engineering Decisions
 
-### 2. BoT-SORT Tracking
-To maintain fighter identities across frames and handle temporary occlusions, the system utilizes **BoT-SORT** (an advanced multi-object tracker). It relies on bounding box IoU and motion prediction to assign a consistent Track ID to each fighter.
+**1. Temporal Smoothing with Kinematic Coasting**
 
-### 3. Pose-Based Feature Extraction
-Raw keypoints are inherently noisy. The `PoseFeatureExtractor` calculates geometric relationships (e.g., shoulder width, torso lean, arm extension). These raw spatial coordinates are then passed through a **Temporal Smoothing** layer, which applies an Exponential Moving Average (EMA) to stabilize the points and derive stable frame-to-frame velocities and accelerations.
+Raw YOLO keypoints are noisy. Each joint gets its own `_PointHistory` instance that runs EMA smoothing (α = 0.35) and supports up to **5 frames of kinematic coasting** — if a keypoint disappears, the system extrapolates position using a damped velocity model (0.85 decay per frame) rather than hard-resetting. This prevents spurious strike/dodge events during momentary occlusions.
 
-### 4. Heuristic Strike Detection
-Strike classification is strictly rule-based. The `StrikeDetector` does not use a trained neural network to recognize a punch. Instead, it measures the magnitude and direction of the wrist velocity. If the velocity exceeds a threshold and the arm reaches a minimum extension, a strike is registered. The specific punch type (Jab, Hook, Uppercut) is classified purely based on the 2D vector angle (e.g., an upward vertical vector registers as an Uppercut).
+**2. Adaptive Jitter Gate**
 
-## Installation
+Single-frame teleportation spikes (tracker glitches) are rejected by checking if a new keypoint exceeds a joint-specific maximum-jump threshold. A _second_ consecutive outlier frame triggers a genuine re-anchor, preventing the gate from permanently locking on a wrong position. Wrists get a wider budget (250 px) to handle fast punch acceleration; head/torso are stricter (120 px).
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/boxing-ai-performance-analyzer.git
-   cd boxing-ai-performance-analyzer
-   ```
+**3. Multi-Signal Strike Confidence**
 
-2. **Install dependencies:**
-   It is highly recommended to use a virtual environment.
-   ```bash
-   pip install -r requirements.txt
-   ```
+The confidence formula computes four independent signals:
 
-3. **Verify Environment:**
-   Run the environment diagnostics script to ensure OpenCV, PyTorch, and YOLO dependencies are correctly configured on your OS:
-   ```bash
-   python verify_env.py
-   ```
+| Signal | Description | Weight |
+|---|---|---|
+| `vel_score` | Wrist speed relative to minimum threshold | 35% |
+| `ext_score` | Arm extension ratio mapped to [0.55–0.95] | 30% |
+| `kp_score` | YOLO elbow keypoint detection confidence | 20% |
+| `prox_score` | Normalized wrist-to-opponent distance | 15% |
 
-## Usage
+Practical ceiling ≈ **0.80**, preventing confidence saturation under normal movement.
 
-### Command-Line Pipeline
-Process a video and generate the annotated output and raw data files.
+**4. Body-Relative Head Motion for Dodge Detection**
+
+To isolate genuine head movement from camera pan or full-body translation, the system computes the frame-to-frame delta of the `(head_pos − shoulder_center)` offset — cancelling camera and body motion. Only residual head-bob/weave velocity above threshold triggers a dodge event.
+
+---
+
+## 📦 Tech Stack
+
+| Library | Version | Role |
+|---|---|---|
+| Python | 3.10+ | Core runtime |
+| ultralytics | 8.3.x | YOLOv8-Pose model |
+| PyTorch | 2.7.x | Deep learning backend |
+| OpenCV | 4.9+ | Video I/O and frame rendering |
+| BoT-SORT | via ultralytics | Multi-object tracking |
+| Streamlit | 1.35+ | Interactive web dashboard |
+| Plotly | 5.22+ | Charts and visualizations |
+| NumPy / Pandas | latest | Numerical and tabular data |
+| lapx | 0.5.5+ | Python 3.12+ compatible LAP solver |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/WaseefUllahh/boxing-ai-performance-analyzer.git
+cd boxing-ai-performance-analyzer
+```
+
+### 2. Install dependencies
+
+> A virtual environment is strongly recommended.
+
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# Linux / macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+> **Note:** PyTorch (`torch 2.7.x`) must be pre-installed. The `requirements.txt` pins `torchvision` and `ultralytics` to matching ABIs but intentionally omits `torch` to avoid unnecessary upgrades.
+
+### 3. Verify your environment
+
+```bash
+python verify_env.py
+```
+
+This runs a full diagnostic of OpenCV, PyTorch, YOLO, and BoT-SORT to confirm your environment is correctly configured before running the pipeline.
+
+---
+
+## ▶️ Usage
+
+### CLI Pipeline
+
+Place your boxing video at `data/fight.mp4` and run:
+
 ```bash
 python main.py
 ```
-*(By default, this analyzes `data/fight.mp4` and exports the results to the `outputs/` directory.)*
+
+The pipeline processes every frame and saves results to a timestamped folder under `outputs/`.
 
 ### Interactive Dashboard
-Launch the Streamlit web app to upload a video, run the pipeline, and visualize the interactive charts.
+
 ```bash
 streamlit run dashboard/app.py
 ```
 
-## Example Outputs
+Upload a video via the web UI, trigger the full pipeline from the browser, and explore interactive Plotly charts for aggregated fight statistics.
 
-When a video is processed, the system generates a timestamped folder in `outputs/` containing:
-- **`boxing_analysis.mp4`**: The original video rendered with bounding boxes, skeletal overlays, movement trails, floating event popups, and a transparent statistics HUD.
-- **`events.csv`**: A chronological log of every detected strike and defensive move, including frame numbers, confidence scores, and heuristic classifications.
-- **`movement.csv`**: Frame-by-frame data on fighter separation and relative movement states (advancing/retreating).
-- **`fight_stats.json`**: The final aggregated metrics for both fighters, ready for API consumption.
+---
 
-## Project Structure
+## 📂 Output Files
 
-```text
+After processing, the `outputs/<timestamp>/` directory contains:
+
+| File | Description |
+|---|---|
+| `boxing_analysis.mp4` | Annotated video with skeleton overlays, movement trails, floating event popups, and transparent HUD |
+| `events.csv` | Chronological log of every detected strike and defense — includes frame number, timestamp, confidence, classification, and outcome |
+| `movement.csv` | Frame-by-frame fighter separation and movement state (advancing / retreating) |
+| `fight_stats.json` | Final aggregated metrics per fighter — ready for API consumption |
+
+---
+
+## 🗂️ Project Structure
+
+```
 boxing-ai-performance-analyzer/
-├── data/                  # Sample video inputs
+├── data/                       # Input video files
 ├── dashboard/
-│   └── app.py             # Streamlit web application
-├── outputs/               # Generated reports and annotated videos
+│   └── app.py                  # Streamlit web application
+├── outputs/                    # Generated reports and annotated videos
 ├── src/
-│   ├── config.py          # Global thresholds and configuration
-│   ├── defense_detector.py# Heuristics for blocks and dodges
-│   ├── events.py          # Dataclasses for FightEvents
-│   ├── fight_analyzer.py  # Aggregates raw events into summary stats
-│   ├── movement_analyzer.py # Calculates advancing/retreating vectors
-│   ├── pose_features.py   # Extracts geometry from keypoints
-│   ├── result_manager.py  # Handles file exports (CSV, JSON, MP4)
-│   ├── strike_detector.py # Heuristics for jabs, crosses, hooks, uppercuts
-│   ├── temporal_features.py # EMA smoothing and velocity calculation
-│   ├── tracker.py         # YOLO + BoT-SORT wrapper
-│   ├── video_io.py        # OpenCV video reading and writing
-│   └── video_processor.py # Orchestrates the pipeline and draws the HUD
-├── tests/                 # Unit tests
-├── main.py                # CLI entry point
-├── requirements.txt       # Python dependencies
-└── verify_env.py          # System diagnostic tool
+│   ├── temporal_features.py    # EMA smoothing, kinematic coasting, velocity/accel
+│   ├── pose_features.py        # Raw 17-keypoint geometry extraction
+│   ├── strike_detector.py      # Rule-based Jab/Cross/Hook/Uppercut classifier
+│   ├── defense_detector.py     # Block and dodge heuristics
+│   ├── movement_analyzer.py    # Advancing/retreating vector analysis
+│   ├── fight_analyzer.py       # Aggregates raw events into summary stats
+│   ├── tracker.py              # YOLOv8 + BoT-SORT wrapper
+│   ├── video_processor.py      # Frame orchestrator and HUD renderer
+│   ├── video_io.py             # OpenCV video reading and writing utilities
+│   ├── result_manager.py       # CSV / JSON / MP4 export
+│   └── events.py               # FightEvent dataclass definition
+├── tests/                      # Unit tests
+├── config.py                   # All tunable thresholds and global configuration
+├── main.py                     # CLI entry point
+├── verify_env.py               # System diagnostic tool
+└── requirements.txt            # Pinned dependencies
 ```
 
-## Known Limitations
+---
+
+## ⚠️ Known Limitations
 
 > [!WARNING]
-> This system is an experimental prototype. The outputs are **heuristic estimates** and have **not been scientifically validated** against ground truth boxing data.
+> This is an experimental research prototype. All outputs are **geometric estimates** and have **not been validated against ground-truth boxing annotations**.
 
-- **No Custom Glove Detector**: The system tracks bare wrists via YOLO pose. It does not possess a specialized model to detect or track boxing gloves.
-- **Estimated Heuristics Only**: "Landed", "Missed", and "Blocked" punches are estimated by intersecting the trajectory of a wrist with the 2D bounding box of the opponent. They do not represent guaranteed physical contact.
-- **No Labeled Training Dataset**: Actions are determined by hardcoded geometry rules. No labeled dataset of boxing actions was used to train a classifier.
-- **Fragile Tracking**: Tracking and stance detection rely heavily on camera angle, lighting, and occlusion. Crossed arms or extreme motion blur will cause the tracker to lose keypoints, severely degrading accuracy.
-- **Not Official Scoring**: This application cannot and should not be used for official fight scoring.
+- **No glove detector** — wrists are tracked via the generic YOLO pose skeleton. Boxing gloves can alter the apparent wrist position.
+- **Heuristic outcomes only** — "Landed" / "Missed" / "Blocked" are estimated by intersecting the wrist trajectory with the opponent's 2D bounding box, not by physical contact detection.
+- **No labeled training data** — strike and defense classification is fully rule-based geometry, not a learned model.
+- **Camera-dependent** — tracking degrades significantly under severe motion blur, unusual camera angles, or heavy occlusion.
+- **Not for official scoring** — results should not be used for professional judging or officiating.
 
-## Future Work
+---
 
-To evolve this prototype into a production-grade analytics engine, the following roadmap is proposed:
-- **Custom Glove Detector**: Train a dedicated object detection model specifically for boxing gloves to replace generic wrist tracking.
-- **Trained Punch Classifier**: Replace geometric heuristics with an LSTM or 3D-CNN trained on a labeled boxing dataset to classify strikes accurately.
-- **Labeled Boxing Dataset**: Curate a robust dataset of annotated boxing footage for supervised learning.
-- **Stronger ReID**: Implement a robust Re-Identification model tailored for fighters (who often wear similar gear and lack upper body clothing).
-- **Camera Calibration**: Map 2D pixel coordinates to 3D real-world space to accurately measure distance, reach, and velocity in standard metrics (m/s).
-- **True Round Detection**: Automatically detect the start and end of rounds (e.g., via clock OCR or referee detection).
-- **Model Evaluation**: Establish a ground-truth testing framework to formally measure Precision, Recall, and F1 scores for strike detection.
-- **Coach Recommendation System**: Introduce a generative AI layer to provide automated, natural-language coaching feedback based on the generated stats.
+## 🔭 Roadmap
+
+| Priority | Item | Description |
+|---|---|---|
+| 🔴 High | **Custom Glove Detector** | Train a dedicated YOLO model on boxing gloves to replace generic wrist tracking |
+| 🔴 High | **Learned Punch Classifier** | Replace geometric heuristics with an LSTM or 3D-CNN trained on labeled boxing actions |
+| 🟡 Medium | **Labeled Boxing Dataset** | Curate and annotate boxing footage for supervised learning of strike and defense types |
+| 🟡 Medium | **Camera Calibration** | Map 2D pixel coordinates to 3D real-world space for accurate velocity in m/s |
+| 🟡 Medium | **Robust ReID** | Re-Identification model for fighters in matching gear |
+| 🟢 Low | **True Round Detection** | Auto-detect round boundaries via ringside clock OCR or referee detection |
+| 🟢 Low | **Model Evaluation Framework** | Precision / Recall / F1 benchmark against ground-truth strike annotations |
+| 🟢 Low | **AI Coaching Layer** | Generative AI feedback with natural-language coaching insights from aggregated stats |
+
+---
+
+<div align="center">
+
+Built with Python, PyTorch, and a lot of geometric algebra. 🥊
+
+</div>
